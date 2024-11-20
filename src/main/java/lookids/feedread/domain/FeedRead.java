@@ -19,19 +19,20 @@ public class FeedRead {
 	private boolean state;
 	private String petCode;
 	private List<String> tags;
-	private List<String> mediaCode;
+	private List<String> mediaUrl;
 	private LocalDateTime createdAt;
+
 
 	@Builder
 	public FeedRead(String feedCode, String uuid, String petCode, String content,
-		List<String> tags, boolean state, List<String> mediaCode, LocalDateTime createdAt, String nickname, String image) {
+		List<String> tags, boolean state, List<String> mediaUrl, LocalDateTime createdAt, String nickname, String image) {
 		this.feedCode = feedCode;
 		this.uuid = uuid;
 		this.content = content;
 		this.state = state;
 		this.petCode = petCode;
 		this.tags = tags;
-		this.mediaCode = mediaCode;
+		this.mediaUrl = mediaUrl;
 		this.createdAt = createdAt;
 		this.nickname = nickname;
 		this.image = image;
