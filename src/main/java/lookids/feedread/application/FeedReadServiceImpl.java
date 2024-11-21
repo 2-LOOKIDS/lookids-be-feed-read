@@ -79,9 +79,8 @@ public class FeedReadServiceImpl implements FeedReadService{
 					.state(feedKafkaDto.isState())
 					.createdAt(feedKafkaDto.getCreatedAt())
 					.uuid(userKafkaDto.getUuid())
-					.content(userKafkaDto.getContent())
-					// .image(userKafkaDto.getImage())
-					// .nickname(userKafkaDto.getNickname())
+					.image(userKafkaDto.getImage())
+					.nickname(userKafkaDto.getNickname())
 					.build();
 				feedReadRepository.save(feedRead);
 				feedEventFutureMap.remove(uuid);
