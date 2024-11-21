@@ -42,25 +42,24 @@ public class FeedReadServiceImpl implements FeedReadService{
 	private MongoTemplate mongoTemplate;
 
 	//feed service consumer
-	@KafkaListener(topics = "feed-create", groupId = "feed-read-service", containerFactory = "feedEventListenerContainerFactory")
+	@KafkaListener(topics = "feed-create", groupId = "feed-read-group", containerFactory = "feedEventListenerContainerFactory")
 	public void FeedConsume(FeedKafkaDto feedKafkaDto) {
-		log.info("Received KafkaDto: " + feedKafkaDto);
 		String uuid = feedKafkaDto.getUuid();
 		CompletableFuture<FeedKafkaDto> feedEventFuture = feedEventFutureMap.computeIfAbsent(uuid,
 			key-> new CompletableFuture<>());
 		feedEventFuture.complete(feedKafkaDto);
-		// log.info("consume: {}", feedKafkaDto);
+		log.info("consume: {}", feedKafkaDto);
 		checkAndCreateFeedEventListener(uuid);
 	}
 
 	//user service consumer
-	@KafkaListener(topics = "userprofile-response", groupId = "kafka-read-service", containerFactory = "userProfileEventListenerContainerFactory")
+	@KafkaListener(topics = "feed-create-join-userprofile", groupId = "feed-read-group", containerFactory = "userProfileEventListenerContainerFactory")
 	public void UserConsume(UserKafkaDto userKafkaDto) {
 		String uuid = userKafkaDto.getUuid();
 		CompletableFuture<UserKafkaDto> userprofileEventFuture = userEventFutureMap.computeIfAbsent(uuid,
 			key-> new CompletableFuture<>());
 		userprofileEventFuture.complete(userKafkaDto);
-		// log.info("consume: {}", userKafkaDto);
+		log.info("User consume: {}", userKafkaDto);
 		checkAndCreateFeedEventListener(uuid);
 	}
 
@@ -80,8 +79,9 @@ public class FeedReadServiceImpl implements FeedReadService{
 					.state(feedKafkaDto.isState())
 					.createdAt(feedKafkaDto.getCreatedAt())
 					.uuid(userKafkaDto.getUuid())
-					.image(userKafkaDto.getImage())
-					.nickname(userKafkaDto.getNickname())
+					.content(userKafkaDto.getContent())
+					// .image(userKafkaDto.getImage())
+					// .nickname(userKafkaDto.getNickname())
 					.build();
 				feedReadRepository.save(feedRead);
 				feedEventFutureMap.remove(uuid);

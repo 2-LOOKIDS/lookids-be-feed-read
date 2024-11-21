@@ -10,14 +10,23 @@ import lombok.ToString;
 @NoArgsConstructor
 public class UserKafkaDto {
 
+	// private String uuid;
+	// private String nickname;
+	// private String image;
+	//
+	// @Builder
+	// public UserKafkaDto(String uuid, String nickname, String image) {
+	// 	this.uuid = uuid;
+	// 	this.nickname = nickname;
+	// 	this.image = image;
+	// }
 	private String uuid;
-	private String nickname;
-	private String image;
+	private String content;
+
 
 	@Builder
-	public UserKafkaDto(String uuid, String nickname, String image) {
+	public  UserKafkaDto(String uuid, String content) {
 		this.uuid = uuid;
-		this.nickname = nickname;
-		this.image = image;
+		this.content = content;
 	}
 }
