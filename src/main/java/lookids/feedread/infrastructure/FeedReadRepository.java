@@ -10,5 +10,5 @@ import lookids.feedread.domain.FeedRead;
 
 public interface FeedReadRepository extends MongoRepository<FeedRead, String> {
 	Page<FeedRead> findByUuidAndStateFalse(String uuid, Pageable pageable);
-	Optional<FeedRead> findByFeedCodeAndStateFalse(String uuid, String feedCode);
+	Optional<FeedRead> findByFeedCodeAndStateFalse(String feedCode);
 }

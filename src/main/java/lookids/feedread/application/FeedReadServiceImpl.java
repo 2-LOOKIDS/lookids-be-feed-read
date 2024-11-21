@@ -109,8 +109,8 @@ public class FeedReadServiceImpl implements FeedReadService{
 
 	// feedCode 기준 조회
 	@Override
-	public FeedReadDetailResponseDto readFeed(String uuid, String feedCode) {
-		FeedRead feedRead = feedReadRepository.findByFeedCodeAndStateFalse(feedCode, uuid)
+	public FeedReadDetailResponseDto readFeed(String feedCode) {
+		FeedRead feedRead = feedReadRepository.findByFeedCodeAndStateFalse(feedCode)
 			.orElseThrow(() -> new BaseException(BaseResponseStatus.NO_EXIST_FEED));
 		return FeedReadDetailResponseDto.toDto(feedRead);
 	}
