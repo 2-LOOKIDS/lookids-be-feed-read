@@ -7,6 +7,6 @@ import lookids.feedread.dto.FeedReadResponseDto;
 
 public interface FeedReadService {
 	Page<FeedReadResponseDto> readFeed(String uuid, int page, int size);
-	FeedReadDetailResponseDto readFeed(String uuid, String feedCode);
+	FeedReadDetailResponseDto readFeed(String feedCode);
 
 }
