@@ -20,5 +20,4 @@ public class UserKafkaDto {
 		this.nickname = nickname;
 		this.image = image;
 	}
-
 }
