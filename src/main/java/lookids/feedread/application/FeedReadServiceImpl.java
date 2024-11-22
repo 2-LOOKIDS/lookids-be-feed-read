@@ -17,6 +17,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,13 +27,14 @@ import lookids.feedread.domain.FeedRead;
 import lookids.feedread.dto.FeedKafkaDto;
 import lookids.feedread.dto.FeedReadDetailResponseDto;
 import lookids.feedread.dto.FeedReadResponseDto;
+import lookids.feedread.dto.UserImageKafkaDto;
 import lookids.feedread.dto.UserKafkaDto;
+import lookids.feedread.dto.UserNickNameKafkaDto;
 import lookids.feedread.infrastructure.FeedReadRepository;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Component
 public class FeedReadServiceImpl implements FeedReadService{
 
 	private final ConcurrentHashMap<String, CompletableFuture<FeedKafkaDto>> feedEventFutureMap = new ConcurrentHashMap<>();
@@ -89,6 +91,35 @@ public class FeedReadServiceImpl implements FeedReadService{
 			});
 		}
 	}
+
+	@Transactional
+	@KafkaListener(topics = "userprofile-nickname-update", groupId = "feed-read-group", containerFactory = "userNickNameEventListenerContainerFactory")
+	public void NickNameUpdateConsume(UserNickNameKafkaDto userNickNameKafkaDto) {
+		// log.info("consume: {}", userNickNameKafkaDto);
+		List<FeedRead> allByUuid = feedReadRepository.findAllByUuid(userNickNameKafkaDto.getUuid());
+		if (allByUuid.isEmpty()) {
+			throw new BaseException(BaseResponseStatus.NO_EXIST_FEED);
+		}
+		List<FeedRead> nickNameUpdate = allByUuid.stream()
+			.map(feedRead -> userNickNameKafkaDto.toNickNameUpdate(feedRead))
+			.collect(Collectors.toList());
+		// log.info("updatedata: {} ", updatedFeedReads);
+		feedReadRepository.saveAll(nickNameUpdate);
+	}
+
+	@Transactional
+	@KafkaListener(topics = "userprofile-image-update", groupId = "feed-read-group", containerFactory = "userProfileEventListenerContainerFactory")
+	public void ImageUpdateConsume(UserImageKafkaDto userImageKafkaDto) {
+		List<FeedRead> allByUuid = feedReadRepository.findAllByUuid(userImageKafkaDto.getUuid());
+		if (allByUuid.isEmpty()) {
+			throw new BaseException(BaseResponseStatus.NO_EXIST_FEED);
+		}
+		List<FeedRead> ImageUpdate = allByUuid.stream()
+			.map(feedRead -> userImageKafkaDto.toImageUpdate(feedRead))
+			.collect(Collectors.toList());
+		feedReadRepository.saveAll(ImageUpdate);
+	}
+
 
 	// uuid 기준 조회
 	@Override
