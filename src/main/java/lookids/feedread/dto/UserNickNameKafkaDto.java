@@ -13,12 +13,14 @@ public class UserNickNameKafkaDto {
 
 	private String uuid;
 	private String nickname;
+	private String tag;
 
 
 	@Builder
-	public UserNickNameKafkaDto(String uuid, String nickname) {
+	public UserNickNameKafkaDto(String uuid, String nickname, String tag) {
 		this.uuid = uuid;
 		this.nickname = nickname;
+		this.tag = tag;
 	}
 
 	public FeedRead toNickNameUpdate(FeedRead feedRead) {
@@ -26,6 +28,7 @@ public class UserNickNameKafkaDto {
 			.id(feedRead.getId())
 			.feedCode(feedRead.getFeedCode())
 			.uuid(feedRead.getUuid())
+			.tag(feedRead.getTag())
 			.nickname(nickname)
 			.image(feedRead.getImage())
 			.content(feedRead.getContent())

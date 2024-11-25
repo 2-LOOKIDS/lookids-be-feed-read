@@ -49,7 +49,6 @@ public class FeedReadServiceImpl implements FeedReadService{
 		CompletableFuture<FeedKafkaDto> feedEventFuture = feedEventFutureMap.computeIfAbsent(uuid,
 			key-> new CompletableFuture<>());
 		feedEventFuture.complete(feedKafkaDto);
-		log.info("consume: {}", feedKafkaDto);
 		checkAndCreateFeedEventListener(uuid);
 	}
 
@@ -60,7 +59,6 @@ public class FeedReadServiceImpl implements FeedReadService{
 		CompletableFuture<UserKafkaDto> userprofileEventFuture = userEventFutureMap.computeIfAbsent(uuid,
 			key-> new CompletableFuture<>());
 		userprofileEventFuture.complete(userKafkaDto);
-		log.info("User consume: {}", userKafkaDto);
 		checkAndCreateFeedEventListener(uuid);
 	}
 
@@ -95,7 +93,6 @@ public class FeedReadServiceImpl implements FeedReadService{
 	@Transactional
 	@KafkaListener(topics = "userprofile-nickname-update", groupId = "feed-read-group", containerFactory = "userNickNameEventListenerContainerFactory")
 	public void NickNameUpdateConsume(UserNickNameKafkaDto userNickNameKafkaDto) {
-		// log.info("consume: {}", userNickNameKafkaDto);
 		List<FeedRead> allByUuid = feedReadRepository.findAllByUuid(userNickNameKafkaDto.getUuid());
 		if (allByUuid.isEmpty()) {
 			throw new BaseException(BaseResponseStatus.NO_EXIST_FEED);
@@ -103,7 +100,6 @@ public class FeedReadServiceImpl implements FeedReadService{
 		List<FeedRead> nickNameUpdate = allByUuid.stream()
 			.map(feedRead -> userNickNameKafkaDto.toNickNameUpdate(feedRead))
 			.collect(Collectors.toList());
-		// log.info("updatedata: {} ", updatedFeedReads);
 		feedReadRepository.saveAll(nickNameUpdate);
 	}
 

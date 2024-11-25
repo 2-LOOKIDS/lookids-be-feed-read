@@ -16,7 +16,9 @@ import lookids.feedread.vo.out.FeedReadDetailResponseVo;
 @NoArgsConstructor
 public class FeedReadDetailResponseDto {
 
+	private String uuid;
 	private String nickname;
+	private String tag;
 	private String image;
 	private String petCode;
 	private String content;
@@ -28,6 +30,7 @@ public class FeedReadDetailResponseDto {
 		return FeedReadDetailResponseDto.builder()
 			.petCode(feedRead.getPetCode())
 			.nickname(feedRead.getNickname())
+			.tag(feedRead.getTag())
 			.image(feedRead.getImage())
 			.content(feedRead.getContent())
 			.tagList(feedRead.getTagList())
@@ -39,6 +42,7 @@ public class FeedReadDetailResponseDto {
 	public FeedReadDetailResponseVo toDetailVo() {
 		return FeedReadDetailResponseVo.builder()
 			.nickname(nickname)
+			.tag(tag)
 			.image(image)
 			.petCode(petCode)
 			.content(content)
