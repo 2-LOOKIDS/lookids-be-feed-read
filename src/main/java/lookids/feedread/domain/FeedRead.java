@@ -22,22 +22,22 @@ public class FeedRead {
 	private String content;
 	private boolean state;
 	private String petCode;
-	private List<String> tags;
-	private List<String> mediaUrl;
+	private List<String> tagList;
+	private List<String> mediaUrlList;
 	private LocalDateTime createdAt;
 
 
 	@Builder
 	public FeedRead(ObjectId id, String feedCode, String uuid, String petCode, String content,
-		List<String> tags, boolean state, List<String> mediaUrl, LocalDateTime createdAt, String nickname, String image) {
+		List<String> tagList, boolean state, List<String> mediaUrlList, LocalDateTime createdAt, String nickname, String image) {
 		this.id = id;
 		this.feedCode = feedCode;
 		this.uuid = uuid;
 		this.content = content;
 		this.state = state;
 		this.petCode = petCode;
-		this.tags = tags;
-		this.mediaUrl = mediaUrl;
+		this.tagList = tagList;
+		this.mediaUrlList = mediaUrlList;
 		this.createdAt = createdAt;
 		this.nickname = nickname;
 		this.image = image;

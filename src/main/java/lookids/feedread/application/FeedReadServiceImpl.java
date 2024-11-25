@@ -15,7 +15,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -76,8 +75,8 @@ public class FeedReadServiceImpl implements FeedReadService{
 					.petCode(feedKafkaDto.getPetCode())
 					.uuid(feedKafkaDto.getUuid())
 					.content(feedKafkaDto.getContent())
-					.tags(feedKafkaDto.getTags())
-					.mediaUrl(feedKafkaDto.getMediaUrl())
+					.tagList(feedKafkaDto.getTagList())
+					.mediaUrlList(feedKafkaDto.getMediaUrlList())
 					.state(feedKafkaDto.isState())
 					.createdAt(feedKafkaDto.getCreatedAt())
 					.uuid(userKafkaDto.getUuid())

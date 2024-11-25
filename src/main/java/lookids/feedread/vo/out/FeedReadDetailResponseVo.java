@@ -18,7 +18,7 @@ public class FeedReadDetailResponseVo {
 	private String image;
 	private String petCode;
 	private String content;
-	private List<String> tags;
-	private List<String> mediaUrl;
+	private List<String> tagList;
+	private List<String> mediaUrlList;
 	private LocalDateTime createdAt;
 }

@@ -17,22 +17,22 @@ public class FeedKafkaDto {
 	private String uuid;
 	private String petCode;
 	private String content;
-	private List<String> tags;
+	private List<String> tagList;
 	private boolean state;
-	private List<String> mediaUrl;
+	private List<String> mediaUrlList;
 	private LocalDateTime createdAt;
 
 
 	@Builder
 	public FeedKafkaDto(String feedCode, String uuid, String petCode, String content,
-		List<String> tags, boolean state, List<String> mediaUrl, LocalDateTime createdAt) {
+		List<String> tagList, boolean state, List<String> mediaUrlList, LocalDateTime createdAt) {
 		this.feedCode = feedCode;
 		this.uuid = uuid;
 		this.petCode = petCode;
 		this.content = content;
-		this.tags = tags;
+		this.tagList = tagList;
 		this.state = state;
-		this.mediaUrl = mediaUrl;
+		this.mediaUrlList = mediaUrlList;
 		this.createdAt = createdAt;
 	}
 }

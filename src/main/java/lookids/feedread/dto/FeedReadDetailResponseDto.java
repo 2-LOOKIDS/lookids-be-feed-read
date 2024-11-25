@@ -20,8 +20,8 @@ public class FeedReadDetailResponseDto {
 	private String image;
 	private String petCode;
 	private String content;
-	private List<String> tags;
-	private List<String> mediaUrl;
+	private List<String> tagList;
+	private List<String> mediaUrlList;
 	private LocalDateTime createdAt;
 
 	public static FeedReadDetailResponseDto toDto(FeedRead feedRead) {
@@ -30,8 +30,8 @@ public class FeedReadDetailResponseDto {
 			.nickname(feedRead.getNickname())
 			.image(feedRead.getImage())
 			.content(feedRead.getContent())
-			.tags(feedRead.getTags())
-			.mediaUrl(feedRead.getMediaUrl())
+			.tagList(feedRead.getTagList())
+			.mediaUrlList(feedRead.getMediaUrlList())
 			.createdAt(feedRead.getCreatedAt())
 			.build();
 	}
@@ -42,8 +42,8 @@ public class FeedReadDetailResponseDto {
 			.image(image)
 			.petCode(petCode)
 			.content(content)
-			.tags(tags)
-			.mediaUrl(mediaUrl)
+			.tagList(tagList)
+			.mediaUrlList(mediaUrlList)
 			.createdAt(createdAt)
 			.build();
 	}
