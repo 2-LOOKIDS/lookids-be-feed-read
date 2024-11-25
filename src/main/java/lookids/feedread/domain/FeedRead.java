@@ -18,6 +18,7 @@ public class FeedRead {
 	private String feedCode;
 	private String uuid;
 	private String nickname;
+	private String tag;
 	private String image;
 	private String content;
 	private boolean state;
@@ -28,7 +29,7 @@ public class FeedRead {
 
 
 	@Builder
-	public FeedRead(ObjectId id, String feedCode, String uuid, String petCode, String content,
+	public FeedRead(ObjectId id, String feedCode, String uuid, String tag, String petCode, String content,
 		List<String> tagList, boolean state, List<String> mediaUrlList, LocalDateTime createdAt, String nickname, String image) {
 		this.id = id;
 		this.feedCode = feedCode;
@@ -41,6 +42,7 @@ public class FeedRead {
 		this.createdAt = createdAt;
 		this.nickname = nickname;
 		this.image = image;
+		this.tag = tag;
 	}
 
 }

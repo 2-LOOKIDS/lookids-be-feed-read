@@ -14,6 +14,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class FeedReadDetailResponseVo {
 
+	private String uuid;
+	private String tag;
 	private String nickname;
 	private String image;
 	private String petCode;
