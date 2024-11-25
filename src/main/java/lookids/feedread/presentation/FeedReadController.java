@@ -23,7 +23,7 @@ public class FeedReadController {
 	private final FeedReadService feedReadService;
 
 
-	@Operation(summary = "feed 조회 API", description = "uuid 기준으로 feed 조회 API 입니다.", tags = {"Feed"})
+	@Operation(summary = "feed 조회 API", description = "uuid 기준으로 해당 사용자의 feed List를 조회하는 API 입니다.", tags = {"Feed"})
 	@GetMapping()
 	public BaseResponse<Page<FeedReadResponseDto>> readFeed(
 		@RequestParam String uuid,
@@ -33,7 +33,7 @@ public class FeedReadController {
 		return new BaseResponse<>(feedRead);
 	}
 
-	@Operation(summary = "feed 조회 API", description = "feedCode 기준으로 feed 조회 API 입니다.", tags = {"Feed"})
+	@Operation(summary = "feed 조회 API", description = "feedCode 기준으로 feed의 상세 내용을 조회하는 API 입니다.", tags = {"Feed"})
 	@GetMapping("/detail")
 	public BaseResponse<FeedReadDetailResponseVo> readFeed(@RequestParam String feedCode) {
 		return new BaseResponse<>(feedReadService.readFeed(feedCode).toDetailVo());
