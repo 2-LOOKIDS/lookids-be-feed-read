@@ -28,6 +28,7 @@ public class FeedReadDetailResponseDto {
 
 	public static FeedReadDetailResponseDto toDto(FeedRead feedRead) {
 		return FeedReadDetailResponseDto.builder()
+			.uuid(feedRead.getUuid())
 			.petCode(feedRead.getPetCode())
 			.nickname(feedRead.getNickname())
 			.tag(feedRead.getTag())
@@ -41,6 +42,7 @@ public class FeedReadDetailResponseDto {
 
 	public FeedReadDetailResponseVo toDetailVo() {
 		return FeedReadDetailResponseVo.builder()
+			.uuid(uuid)
 			.nickname(nickname)
 			.tag(tag)
 			.image(image)
