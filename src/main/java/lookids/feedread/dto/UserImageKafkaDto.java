@@ -26,6 +26,7 @@ public class UserImageKafkaDto {
 			.feedCode(feedRead.getFeedCode())
 			.uuid(feedRead.getUuid())
 			.nickname(feedRead.getNickname())
+			.tag(feedRead.getTag())
 			.image(image)
 			.content(feedRead.getContent())
 			.state(feedRead.isState())
