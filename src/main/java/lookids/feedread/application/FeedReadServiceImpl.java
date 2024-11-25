@@ -80,6 +80,7 @@ public class FeedReadServiceImpl implements FeedReadService{
 					.state(feedKafkaDto.isState())
 					.createdAt(feedKafkaDto.getCreatedAt())
 					.uuid(userKafkaDto.getUuid())
+					.tag(userKafkaDto.getTag())
 					.image(userKafkaDto.getImage())
 					.nickname(userKafkaDto.getNickname())
 					.build();
