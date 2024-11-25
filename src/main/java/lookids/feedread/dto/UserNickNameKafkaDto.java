@@ -13,14 +13,12 @@ public class UserNickNameKafkaDto {
 
 	private String uuid;
 	private String nickname;
-	private String content;
 
 
 	@Builder
-	public UserNickNameKafkaDto(String uuid, String nickname, String content) {
+	public UserNickNameKafkaDto(String uuid, String nickname) {
 		this.uuid = uuid;
 		this.nickname = nickname;
-		this.content = content;
 	}
 
 	public FeedRead toNickNameUpdate(FeedRead feedRead) {
