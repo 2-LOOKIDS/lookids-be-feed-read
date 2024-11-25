@@ -33,8 +33,8 @@ public class UserNickNameKafkaDto {
 			.content(feedRead.getContent())
 			.state(feedRead.isState())
 			.petCode(feedRead.getPetCode())
-			.tags(feedRead.getTags())
-			.mediaUrl(feedRead.getMediaUrl())
+			.tagList(feedRead.getTagList())
+			.mediaUrlList(feedRead.getMediaUrlList())
 			.createdAt(feedRead.getCreatedAt())
 			.build();
 	}

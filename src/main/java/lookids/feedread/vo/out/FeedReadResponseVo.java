@@ -14,6 +14,6 @@ import lombok.NoArgsConstructor;
 public class FeedReadResponseVo {
 
 	private String feedCode;
-	private List<String> mediaUrl;
+	private List<String> mediaUrlList;
 
 }
