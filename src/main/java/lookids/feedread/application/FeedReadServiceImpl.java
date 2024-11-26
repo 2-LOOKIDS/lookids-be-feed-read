@@ -20,15 +20,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import lookids.common.entity.BaseResponseStatus;
-import lookids.common.exception.BaseException;
-import lookids.feedread.domain.FeedRead;
+import lookids.feedread.common.entity.BaseResponseStatus;
+import lookids.feedread.common.exception.BaseException;
 import lookids.feedread.dto.FeedKafkaDto;
 import lookids.feedread.dto.FeedReadDetailResponseDto;
 import lookids.feedread.dto.FeedReadResponseDto;
 import lookids.feedread.dto.UserImageKafkaDto;
 import lookids.feedread.dto.UserKafkaDto;
 import lookids.feedread.dto.UserNickNameKafkaDto;
+import lookids.feedread.domain.FeedRead;
 import lookids.feedread.infrastructure.FeedReadRepository;
 
 @Slf4j

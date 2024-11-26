@@ -1,4 +1,4 @@
-package lookids.common.entity;
+package lookids.feedread.common.entity;
 
 import org.springframework.http.HttpStatus;
 

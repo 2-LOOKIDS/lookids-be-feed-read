@@ -1,4 +1,4 @@
-package lookids.common.config;
+package lookids.feedread.common.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;

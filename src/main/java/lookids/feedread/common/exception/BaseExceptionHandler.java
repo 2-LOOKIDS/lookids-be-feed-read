@@ -1,12 +1,12 @@
-package lookids.common.exception;
+package lookids.feedread.common.exception;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import lombok.extern.slf4j.Slf4j;
-import lookids.common.entity.BaseResponse;
-import lookids.common.entity.BaseResponseStatus;
+import lookids.feedread.common.entity.BaseResponse;
+import lookids.feedread.common.entity.BaseResponseStatus;
 
 @RestControllerAdvice
 @Slf4j

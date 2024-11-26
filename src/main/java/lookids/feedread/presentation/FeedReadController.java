@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import lookids.common.entity.BaseResponse;
-import lookids.feedread.application.FeedReadService;
+import lookids.feedread.common.entity.BaseResponse;
 import lookids.feedread.dto.FeedReadResponseDto;
+import lookids.feedread.application.FeedReadService;
 import lookids.feedread.vo.out.FeedReadDetailResponseVo;
 
 @RequiredArgsConstructor

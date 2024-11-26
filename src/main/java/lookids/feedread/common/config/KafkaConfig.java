@@ -1,4 +1,4 @@
-package lookids.common.config;
+package lookids.feedread.common.config;
 
 import java.util.HashMap;
 import java.util.Map;

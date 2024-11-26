@@ -1,6 +1,6 @@
-package lookids.common.entity;
+package lookids.feedread.common.entity;
 
-import static lookids.common.entity.BaseResponseStatus.*;
+import static lookids.feedread.common.entity.BaseResponseStatus.*;
 
 import org.springframework.http.HttpStatus;
 
