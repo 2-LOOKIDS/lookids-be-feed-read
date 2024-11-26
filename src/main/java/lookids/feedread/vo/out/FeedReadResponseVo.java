@@ -15,5 +15,6 @@ public class FeedReadResponseVo {
 
 	private String feedCode;
 	private List<String> mediaUrlList;
+	private String mediaUrl;
 
 }

@@ -16,14 +16,16 @@ import lookids.feedread.vo.out.FeedReadResponseVo;
 public class FeedReadResponseDto {
 
 	private String feedCode;
-	private List<String> mediaUrlList;
+	// private List<String> mediaUrlList;
+	private String mediaUrl;
+
 
 
 	public static FeedReadResponseDto toDto(FeedRead feedRead) {
 		return FeedReadResponseDto.builder()
 			.feedCode(feedRead.getFeedCode())
-			.mediaUrlList(feedRead.getMediaUrlList() != null && !feedRead.getMediaUrlList().isEmpty()
-				? List.of(feedRead.getMediaUrlList().get(0)) : List.of()) // 첫 번째 mediaUrl 보여주도록 설정
+			.mediaUrl(feedRead.getMediaUrlList() != null && !feedRead.getMediaUrlList().isEmpty()
+				?feedRead.getMediaUrlList().get(0) : null) // 첫 번째 mediaUrl만 보여주도록 설정
 			// .mediaUrlList(feedRead.getMediaUrlList())
 			.build();
 	}
@@ -31,7 +33,7 @@ public class FeedReadResponseDto {
 	public FeedReadResponseVo toVo() {
 		return FeedReadResponseVo.builder()
 			.feedCode(feedCode)
-			.mediaUrlList(mediaUrlList)
+			.mediaUrl(mediaUrl)
 			.build();
 	}
 }
