@@ -1,4 +1,4 @@
-package Lookids.Feed.common.utills;
+package lookids.common.utills;
 
 import java.util.List;
 
