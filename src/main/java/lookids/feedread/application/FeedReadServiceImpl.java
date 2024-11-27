@@ -22,13 +22,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lookids.common.entity.BaseResponseStatus;
 import lookids.common.exception.BaseException;
+import lookids.feedread.domain.FeedRead;
+import lookids.feedread.dto.FavoriteKafkaDto;
 import lookids.feedread.dto.FeedKafkaDto;
+import lookids.feedread.dto.FeedListResponseDto;
 import lookids.feedread.dto.FeedReadDetailResponseDto;
 import lookids.feedread.dto.FeedReadResponseDto;
 import lookids.feedread.dto.UserImageKafkaDto;
 import lookids.feedread.dto.UserKafkaDto;
 import lookids.feedread.dto.UserNickNameKafkaDto;
-import lookids.feedread.domain.FeedRead;
 import lookids.feedread.infrastructure.FeedReadRepository;
 
 @Slf4j
@@ -42,7 +44,7 @@ public class FeedReadServiceImpl implements FeedReadService{
 	@Autowired
 	private MongoTemplate mongoTemplate;
 
-	//feed service consumer
+	//feed service consume
 	@KafkaListener(topics = "feed-create", groupId = "feed-read-group", containerFactory = "feedEventListenerContainerFactory")
 	public void FeedConsume(FeedKafkaDto feedKafkaDto) {
 		String uuid = feedKafkaDto.getUuid();
@@ -52,7 +54,7 @@ public class FeedReadServiceImpl implements FeedReadService{
 		checkAndCreateFeedEventListener(uuid);
 	}
 
-	//user service consumer
+	//user service consume
 	@KafkaListener(topics = "feed-create-join-userprofile", groupId = "feed-read-group", containerFactory = "userProfileEventListenerContainerFactory")
 	public void UserConsume(UserKafkaDto userKafkaDto) {
 		String uuid = userKafkaDto.getUuid();
@@ -78,9 +80,9 @@ public class FeedReadServiceImpl implements FeedReadService{
 					.state(feedKafkaDto.isState())
 					.createdAt(feedKafkaDto.getCreatedAt())
 					.uuid(userKafkaDto.getUuid())
-					.tag(userKafkaDto.getTag())
-					.image(userKafkaDto.getImage())
-					.nickname(userKafkaDto.getNickname())
+					// .tag(userKafkaDto.getTag())
+					// .image(userKafkaDto.getImage())
+					// .nickname(userKafkaDto.getNickname())
 					.build();
 				feedReadRepository.save(feedRead);
 				feedEventFutureMap.remove(uuid);
@@ -90,6 +92,7 @@ public class FeedReadServiceImpl implements FeedReadService{
 		}
 	}
 
+	//userprofile nickname update
 	@Transactional
 	@KafkaListener(topics = "userprofile-nickname-update", groupId = "feed-read-group", containerFactory = "userNickNameEventListenerContainerFactory")
 	public void NickNameUpdateConsume(UserNickNameKafkaDto userNickNameKafkaDto) {
@@ -103,6 +106,7 @@ public class FeedReadServiceImpl implements FeedReadService{
 		feedReadRepository.saveAll(nickNameUpdate);
 	}
 
+	//userprofile image update
 	@Transactional
 	@KafkaListener(topics = "userprofile-image-update", groupId = "feed-read-group", containerFactory = "userProfileEventListenerContainerFactory")
 	public void ImageUpdateConsume(UserImageKafkaDto userImageKafkaDto) {
@@ -116,9 +120,34 @@ public class FeedReadServiceImpl implements FeedReadService{
 		feedReadRepository.saveAll(ImageUpdate);
 	}
 
-	// uuid 기준 조회
+	//favorite service consume
+	@KafkaListener(topics = "feed-create", groupId = "feed-read-group", containerFactory = "feedEventListenerContainerFactory")
+	public void FavoriteConsume(FavoriteKafkaDto favoriteKafkaDto) {
+		log.info("favorite: {}", favoriteKafkaDto);
+	}
+
+	//uuid feed List 조회
 	@Override
-	public Page<FeedReadResponseDto> readFeed(String uuid, int page, int size) {
+	public Page<FeedListResponseDto> readFeedList(String uuid, int page, int size) {
+		Query query = new Query(Criteria.where("state").is(false));
+		query.with(Sort.by(
+			Sort.Order.desc("createdAt")));
+		Pageable pageable = PageRequest.of(page, size);
+		query.skip(pageable.getPageNumber() * pageable.getPageSize());
+		query.limit(pageable.getPageSize());
+
+		List<FeedRead> feedReadList = mongoTemplate.find(query, FeedRead.class);
+		long total = mongoTemplate.count(Query.of(query).limit(-1).skip(-1), FeedRead.class);
+
+		List<FeedListResponseDto> feedDtoList = feedReadList.stream()
+			.map(FeedListResponseDto::toDto)
+			.collect(Collectors.toList());
+		return new PageImpl<>(feedDtoList, pageable, total);
+	}
+
+	//feed thumbnail List 조회
+	@Override
+	public Page<FeedReadResponseDto> readFeedThumbnailList(String uuid, int page, int size) {
 		Query query = new Query(Criteria.where("uuid").is(uuid).and("state").is(false));
 		query.with(Sort.by(Sort.Order.desc("createdAt")));
 		Pageable pageable = PageRequest.of(page, size);
@@ -133,9 +162,9 @@ public class FeedReadServiceImpl implements FeedReadService{
 		return new PageImpl<>(feedDtoList, pageable, total);
 	}
 
-	// feedCode 기준 조회
+	//feed detail 조회
 	@Override
-	public FeedReadDetailResponseDto readFeed(String feedCode) {
+	public FeedReadDetailResponseDto readFeedDetail(String feedCode) {
 		FeedRead feedRead = feedReadRepository.findByFeedCodeAndStateFalse(feedCode)
 			.orElseThrow(() -> new BaseException(BaseResponseStatus.NO_EXIST_FEED));
 		return FeedReadDetailResponseDto.toDto(feedRead);
