@@ -1,6 +1,6 @@
 package lookids.feedread.vo.out;
 
-import java.util.List;
+
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class FeedReadResponseVo {
 
 	private String feedCode;
-	private List<String> mediaUrlList;
+	// private List<String> mediaUrlList;
 	private String mediaUrl;
 
 }
