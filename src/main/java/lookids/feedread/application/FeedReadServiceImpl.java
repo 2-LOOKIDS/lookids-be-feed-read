@@ -128,7 +128,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 		}
 
 		favoriteKafkaTemplate.send("favorite-request", FavoriteRequestKafkaDto.builder().uuid(uuid).build());
-		log.info("uuidConsume: {}", new FavoriteRequestKafkaDto(uuid));
+		// log.info("uuidConsume: {}", new FavoriteRequestKafkaDto(uuid));
 		CompletableFuture<FavoriteResponseDto> futureFeedCodeList = new CompletableFuture<>();
 		favoriteEventFutureMap.put(uuid, futureFeedCodeList);
 
@@ -165,8 +165,10 @@ public class FeedReadServiceImpl implements FeedReadService {
 	//uuid feed List 조회
 	@Override
 	public Page<FeedListResponseDto> readFeedList(String uuid, int page, int size) {
-		FeedRead feedRead = feedReadRepository.findByUuid(uuid)
-			.orElseThrow(() -> new BaseException(BaseResponseStatus.NO_EXIST_USER));
+		List<FeedRead> findUuid = feedReadRepository.findAllByUuid(uuid);
+		if (findUuid.isEmpty()) {
+			throw new BaseException(BaseResponseStatus.NO_EXIST_USER);
+		}
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
 		Page<FeedRead> feedReadList = feedReadRepository.findByUuidAndStateFalse(uuid, pageable);
 		List<FeedListResponseDto> feedDtoList = feedReadList.stream()
@@ -178,8 +180,10 @@ public class FeedReadServiceImpl implements FeedReadService {
 	//feed thumbnail List 조회
 	@Override
 	public Page<FeedReadResponseDto> readFeedThumbnailList(String uuid, int page, int size) {
-		FeedRead feedRead = feedReadRepository.findByUuid(uuid)
-			.orElseThrow(() -> new BaseException(BaseResponseStatus.NO_EXIST_USER));
+		List<FeedRead> findUuid = feedReadRepository.findAllByUuid(uuid);
+		if (findUuid.isEmpty()) {
+			throw new BaseException(BaseResponseStatus.NO_EXIST_USER);
+		}
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
 		Page<FeedRead> feedReadList = feedReadRepository.findByUuidAndStateFalse(uuid, pageable);
 		List<FeedReadResponseDto> feedDtoList = feedReadList.getContent().stream()
