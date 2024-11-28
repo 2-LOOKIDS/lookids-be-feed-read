@@ -11,15 +11,15 @@ import lombok.ToString;
 public class UserKafkaDto {
 
 	private String uuid;
-	// private String nickname;
-	// private String image;
-	// private String tag;
+	private String nickname;
+	private String image;
+	private String tag;
 
 	@Builder
 	public UserKafkaDto(String uuid, String nickname, String image, String tag) {
 		this.uuid = uuid;
-		// this.nickname = nickname;
-		// this.image = image;
-		// this.tag = tag;
+		this.nickname = nickname;
+		this.image = image;
+		this.tag = tag;
 	}
 }
