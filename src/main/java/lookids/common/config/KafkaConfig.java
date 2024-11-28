@@ -15,6 +15,7 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 
+import lookids.feedread.dto.FavoriteResponseDto;
 import lookids.feedread.dto.FeedKafkaDto;
 import lookids.feedread.dto.UserImageKafkaDto;
 import lookids.feedread.dto.UserKafkaDto;
@@ -97,6 +98,25 @@ public class KafkaConfig {
 	public ConcurrentKafkaListenerContainerFactory<String, UserImageKafkaDto> userImageEventListenerContainerFactory() {
 		ConcurrentKafkaListenerContainerFactory<String, UserImageKafkaDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
 		factory.setConsumerFactory(userImageConsumerFactory());
+		return factory;
+	}
+
+	@Bean
+	public ConsumerFactory<String, FavoriteResponseDto> favoriteConsumerFactory() {
+		Map<String, Object> props = new HashMap<>();
+		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
+		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
+		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
+		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
+			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(FavoriteResponseDto.class, false)));
+	}
+
+	@Bean
+	public ConcurrentKafkaListenerContainerFactory<String, FavoriteResponseDto> favoriteEventListenerContainerFactory() {
+		ConcurrentKafkaListenerContainerFactory<String, FavoriteResponseDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
+		factory.setConsumerFactory(favoriteConsumerFactory());
 		return factory;
 	}
 }

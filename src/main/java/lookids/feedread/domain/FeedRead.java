@@ -44,5 +44,4 @@ public class FeedRead {
 		this.image = image;
 		this.tag = tag;
 	}
-
 }
