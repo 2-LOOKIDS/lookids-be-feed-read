@@ -1,6 +1,7 @@
 package lookids.feedread.dto;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import lombok.AllArgsConstructor;
@@ -36,7 +37,10 @@ public class FeedReadDetailResponseDto {
 			.content(feedRead.getContent())
 			.tagList(feedRead.getTagList())
 			.mediaUrlList(feedRead.getMediaUrlList())
-			.createdAt(feedRead.getCreatedAt())
+			.createdAt(feedRead.getCreatedAt()
+				.atZone(ZoneId.systemDefault())
+				.withZoneSameInstant(ZoneId.of("Asia/Seoul"))
+				.toLocalDateTime())
 			.build();
 	}
 
