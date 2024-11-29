@@ -1,4 +1,4 @@
-package lookids.feedread.dto;
+package lookids.feedread.dto.in;
 
 import java.time.LocalDateTime;
 import java.util.List;

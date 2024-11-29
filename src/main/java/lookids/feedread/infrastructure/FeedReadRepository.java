@@ -14,5 +14,4 @@ public interface FeedReadRepository extends MongoRepository<FeedRead, String> {
 	Page<FeedRead> findByFeedCodeInAndStateFalse(List<String> targetCodeList, Pageable pageable);
 	List<FeedRead> findAllByUuid(String uuid);
 	Optional<FeedRead> findByFeedCodeAndStateFalse(String feedCode);
-	Optional<FeedRead> findByUuid(String uuid);
 }

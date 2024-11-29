@@ -1,4 +1,4 @@
-package lookids.feedread.dto;
+package lookids.feedread.dto.in;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -9,28 +9,25 @@ import lookids.feedread.domain.FeedRead;
 @Getter
 @ToString
 @NoArgsConstructor
-public class UserNickNameKafkaDto {
+public class UserImageKafkaDto {
 
 	private String uuid;
-	private String nickname;
-	private String tag;
-
+	private String image;
 
 	@Builder
-	public UserNickNameKafkaDto(String uuid, String nickname, String tag) {
+	public UserImageKafkaDto(String uuid, String image) {
 		this.uuid = uuid;
-		this.nickname = nickname;
-		this.tag = tag;
+		this.image = image;
 	}
 
-	public FeedRead toNickNameUpdate(FeedRead feedRead) {
+	public FeedRead toImageUpdate(FeedRead feedRead) {
 		return FeedRead.builder()
 			.id(feedRead.getId())
 			.feedCode(feedRead.getFeedCode())
 			.uuid(feedRead.getUuid())
+			.nickname(feedRead.getNickname())
 			.tag(feedRead.getTag())
-			.nickname(nickname)
-			.image(feedRead.getImage())
+			.image(image)
 			.content(feedRead.getContent())
 			.state(feedRead.isState())
 			.petCode(feedRead.getPetCode())

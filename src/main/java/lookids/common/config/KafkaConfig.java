@@ -15,11 +15,12 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 
-import lookids.feedread.dto.FavoriteResponseDto;
-import lookids.feedread.dto.FeedKafkaDto;
-import lookids.feedread.dto.UserImageKafkaDto;
-import lookids.feedread.dto.UserKafkaDto;
-import lookids.feedread.dto.UserNickNameKafkaDto;
+import lookids.feedread.dto.in.FeedDeleteKafkaDto;
+import lookids.feedread.dto.out.FavoriteResponseDto;
+import lookids.feedread.dto.in.FeedKafkaDto;
+import lookids.feedread.dto.in.UserImageKafkaDto;
+import lookids.feedread.dto.in.UserKafkaDto;
+import lookids.feedread.dto.in.UserNickNameKafkaDto;
 
 @EnableKafka
 @Configuration
@@ -123,6 +124,25 @@ public class KafkaConfig {
 	public ConcurrentKafkaListenerContainerFactory<String, FavoriteResponseDto> favoriteEventListenerContainerFactory() {
 		ConcurrentKafkaListenerContainerFactory<String, FavoriteResponseDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
 		factory.setConsumerFactory(favoriteConsumerFactory());
+		return factory;
+	}
+
+	@Bean
+	public ConsumerFactory<String, FeedDeleteKafkaDto> DeleteConsumerFactory() {
+		Map<String, Object> props = new HashMap<>();
+		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
+		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
+		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
+		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
+			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(FeedDeleteKafkaDto.class, false)));
+	}
+
+	@Bean
+	public ConcurrentKafkaListenerContainerFactory<String, FeedDeleteKafkaDto> deleteEventListenerContainerFactory() {
+		ConcurrentKafkaListenerContainerFactory<String, FeedDeleteKafkaDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
+		factory.setConsumerFactory(DeleteConsumerFactory());
 		return factory;
 	}
 }

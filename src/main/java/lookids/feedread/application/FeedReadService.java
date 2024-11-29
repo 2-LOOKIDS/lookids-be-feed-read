@@ -2,9 +2,9 @@ package lookids.feedread.application;
 
 import org.springframework.data.domain.Page;
 
-import lookids.feedread.dto.FeedListResponseDto;
-import lookids.feedread.dto.FeedReadDetailResponseDto;
-import lookids.feedread.dto.FeedReadResponseDto;
+import lookids.feedread.dto.out.FeedListResponseDto;
+import lookids.feedread.dto.out.FeedReadDetailResponseDto;
+import lookids.feedread.dto.out.FeedReadResponseDto;
 
 public interface FeedReadService {
 	Page<FeedReadResponseDto> readFeedThumbnailList(String uuid, int page, int size);
