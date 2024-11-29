@@ -1,4 +1,4 @@
-package lookids.feedread.dto;
+package lookids.feedread.dto.out;
 
 import java.util.List;
 

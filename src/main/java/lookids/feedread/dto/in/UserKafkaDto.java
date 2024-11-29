@@ -1,4 +1,4 @@
-package lookids.feedread.dto;
+package lookids.feedread.dto.in;
 
 import lombok.Builder;
 import lombok.Getter;

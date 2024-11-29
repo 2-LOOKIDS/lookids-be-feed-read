@@ -12,8 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lookids.common.entity.BaseResponse;
 import lookids.feedread.application.FeedReadService;
-import lookids.feedread.dto.FeedListResponseDto;
-import lookids.feedread.dto.FeedReadResponseDto;
+import lookids.feedread.dto.out.FeedListResponseDto;
+import lookids.feedread.dto.out.FeedReadResponseDto;
 import lookids.feedread.vo.out.FeedReadDetailResponseVo;
 
 @RequiredArgsConstructor

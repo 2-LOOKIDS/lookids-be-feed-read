@@ -1,4 +1,7 @@
-package lookids.feedread.dto;
+package lookids.feedread.dto.in;
+
+import org.apache.kafka.common.errors.FencedLeaderEpochException;
+import org.bson.types.ObjectId;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -9,31 +12,29 @@ import lookids.feedread.domain.FeedRead;
 @Getter
 @ToString
 @NoArgsConstructor
-public class UserImageKafkaDto {
+public class FeedDeleteKafkaDto {
 
-	private String uuid;
-	private String image;
+	private String feedCode;
 
 	@Builder
-	public UserImageKafkaDto(String uuid, String image) {
-		this.uuid = uuid;
-		this.image = image;
+	public FeedDeleteKafkaDto(String feedCode) {
+		this.feedCode = feedCode;
 	}
 
-	public FeedRead toImageUpdate(FeedRead feedRead) {
+	public FeedRead toUpdatedEntity(FeedRead feedRead) {
 		return FeedRead.builder()
 			.id(feedRead.getId())
 			.feedCode(feedRead.getFeedCode())
 			.uuid(feedRead.getUuid())
 			.nickname(feedRead.getNickname())
+			.image(feedRead.getImage())
 			.tag(feedRead.getTag())
-			.image(image)
 			.content(feedRead.getContent())
-			.state(feedRead.isState())
-			.petCode(feedRead.getPetCode())
 			.tagList(feedRead.getTagList())
+			.petCode(feedRead.getPetCode())
 			.mediaUrlList(feedRead.getMediaUrlList())
 			.createdAt(feedRead.getCreatedAt())
+			.state(true)
 			.build();
 	}
 }

@@ -21,15 +21,16 @@ import lombok.extern.slf4j.Slf4j;
 import lookids.common.entity.BaseResponseStatus;
 import lookids.common.exception.BaseException;
 import lookids.feedread.domain.FeedRead;
-import lookids.feedread.dto.FavoriteRequestKafkaDto;
-import lookids.feedread.dto.FavoriteResponseDto;
-import lookids.feedread.dto.FeedKafkaDto;
-import lookids.feedread.dto.FeedListResponseDto;
-import lookids.feedread.dto.FeedReadDetailResponseDto;
-import lookids.feedread.dto.FeedReadResponseDto;
-import lookids.feedread.dto.UserImageKafkaDto;
-import lookids.feedread.dto.UserKafkaDto;
-import lookids.feedread.dto.UserNickNameKafkaDto;
+import lookids.feedread.dto.in.FavoriteRequestKafkaDto;
+import lookids.feedread.dto.in.FeedDeleteKafkaDto;
+import lookids.feedread.dto.out.FavoriteResponseDto;
+import lookids.feedread.dto.in.FeedKafkaDto;
+import lookids.feedread.dto.out.FeedListResponseDto;
+import lookids.feedread.dto.out.FeedReadDetailResponseDto;
+import lookids.feedread.dto.out.FeedReadResponseDto;
+import lookids.feedread.dto.in.UserImageKafkaDto;
+import lookids.feedread.dto.in.UserKafkaDto;
+import lookids.feedread.dto.in.UserNickNameKafkaDto;
 import lookids.feedread.infrastructure.FeedReadRepository;
 
 @Slf4j
@@ -119,6 +120,15 @@ public class FeedReadServiceImpl implements FeedReadService {
 		feedReadRepository.saveAll(ImageUpdate);
 	}
 
+	//feed delete consume
+	@KafkaListener(topics = "feed-delete", groupId = "feed-read-group", containerFactory = "deleteEventListenerContainerFactory")
+	public void FeedDeleteConsume(FeedDeleteKafkaDto feedDeleteKafkaDto) {
+		FeedRead feedRead = feedReadRepository.findByFeedCodeAndStateFalse(feedDeleteKafkaDto.getFeedCode())
+			.orElseThrow(() -> new BaseException(BaseResponseStatus.NO_EXIST_FEED));
+		FeedRead updatedFeedRead = feedDeleteKafkaDto.toUpdatedEntity(feedRead);
+		feedReadRepository.save(updatedFeedRead);
+	}
+
 	//uuid feed favorite List 조회
 	@Override
 	public Page<FeedReadResponseDto> readFeedFavoriteList(String uuid, int page, int size) {
@@ -128,7 +138,6 @@ public class FeedReadServiceImpl implements FeedReadService {
 		}
 
 		favoriteKafkaTemplate.send("favorite-request", FavoriteRequestKafkaDto.builder().uuid(uuid).build());
-		// log.info("uuidConsume: {}", new FavoriteRequestKafkaDto(uuid));
 		CompletableFuture<FavoriteResponseDto> futureFeedCodeList = new CompletableFuture<>();
 		favoriteEventFutureMap.put(uuid, futureFeedCodeList);
 
@@ -153,7 +162,6 @@ public class FeedReadServiceImpl implements FeedReadService {
 	@KafkaListener(topics = "favorite-response", groupId = "feed-read-group", containerFactory = "favoriteEventListenerContainerFactory")
 	public void readFeedFavorite(FavoriteResponseDto favoriteResponseDto) {
 		String uuid = favoriteResponseDto.getUuid();
-		log.info("favoriteResponse: {} ", favoriteResponseDto);
 		CompletableFuture<FavoriteResponseDto> futureFeedCodeList = favoriteEventFutureMap.get(uuid);
 		if (futureFeedCodeList != null) {
 			futureFeedCodeList.complete(favoriteResponseDto);
