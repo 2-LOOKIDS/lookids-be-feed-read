@@ -11,12 +11,17 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import lookids.common.entity.BaseResponseStatus;
 import lookids.common.exception.BaseException;
@@ -36,6 +41,7 @@ import lookids.feedread.infrastructure.FeedReadRepository;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ToString
 public class FeedReadServiceImpl implements FeedReadService {
 
 	private final ConcurrentHashMap<String, CompletableFuture<FeedKafkaDto>> feedEventFutureMap = new ConcurrentHashMap<>();
@@ -43,6 +49,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 	private final ConcurrentHashMap<String, CompletableFuture<FavoriteResponseDto>> favoriteEventFutureMap = new ConcurrentHashMap<>();
 	private final KafkaTemplate<String, FavoriteRequestKafkaDto> favoriteKafkaTemplate;
 	private final FeedReadRepository feedReadRepository;
+	private final MongoTemplate mongoTemplate;
 
 	//feed service consume
 	@KafkaListener(topics = "feed-create", groupId = "feed-read-group", containerFactory = "feedEventListenerContainerFactory")
@@ -80,9 +87,9 @@ public class FeedReadServiceImpl implements FeedReadService {
 					.state(feedKafkaDto.isState())
 					.createdAt(feedKafkaDto.getCreatedAt())
 					.uuid(userKafkaDto.getUuid())
-					.tag(userKafkaDto.getTag())
-					.image(userKafkaDto.getImage())
-					.nickname(userKafkaDto.getNickname())
+					// .tag(userKafkaDto.getTag())
+					// .image(userKafkaDto.getImage())
+					// .nickname(userKafkaDto.getNickname())
 					.build();
 				feedReadRepository.save(feedRead);
 				feedEventFutureMap.remove(uuid);
@@ -170,19 +177,53 @@ public class FeedReadServiceImpl implements FeedReadService {
 		}
 	}
 
-	//uuid feed List 조회
+	// //uuid feed List 조회
+	// @Override
+	// public Page<FeedListResponseDto> readFeedList(String uuid, int page, int size) {
+	// 	List<FeedRead> findUuid = feedReadRepository.findAllByUuid(uuid);
+	// 	if (findUuid.isEmpty()) {
+	// 		throw new BaseException(BaseResponseStatus.NO_EXIST_USER);
+	// 	}
+	// 	Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
+	// 	Page<FeedRead> feedReadList = feedReadRepository.findByUuidAndStateFalse(uuid, pageable);
+	// 	List<FeedListResponseDto> feedDtoList = feedReadList.stream()
+	// 		.map(FeedListResponseDto::toDto)
+	// 		.collect(Collectors.toList());
+	// 	return new PageImpl<>(feedDtoList, pageable, feedReadList.getTotalElements());
+	// }
+
+	//uuid feed List 조회 (uuid가 팔로우 한 유저들의 피드 목록 + tag 필터링 포함 조회)
 	@Override
-	public Page<FeedListResponseDto> readFeedList(String uuid, int page, int size) {
+	public Page<FeedListResponseDto> readFeedAndTagList(String uuid, String tag, int page, int size) {
 		List<FeedRead> findUuid = feedReadRepository.findAllByUuid(uuid);
 		if (findUuid.isEmpty()) {
 			throw new BaseException(BaseResponseStatus.NO_EXIST_USER);
 		}
+
+		// 정렬하기 위해 사용하는 uuid, stata, tagList가 뭔지
+		Criteria criteria = Criteria.where("uuid").is(uuid).and("state").is(false);
+		if (tag != null && !tag.isEmpty()) {
+			criteria.and("tagList").in(tag);
+		}
+
+		// Aggregation
+		Aggregation aggregation = Aggregation.newAggregation(
+			Aggregation.match(criteria),
+			Aggregation.sort(Sort.by(Sort.Direction.DESC, "createdAt")),
+			Aggregation.skip((long) page * size),
+			Aggregation.limit(size)
+		);
+		AggregationResults<FeedRead> results = mongoTemplate.aggregate(aggregation, "feedRead", FeedRead.class);
+
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
 		Page<FeedRead> feedReadList = feedReadRepository.findByUuidAndStateFalse(uuid, pageable);
-		List<FeedListResponseDto> feedDtoList = feedReadList.stream()
+
+		List<FeedListResponseDto> feedDtoList = results.getMappedResults()
+			.stream()
 			.map(FeedListResponseDto::toDto)
 			.collect(Collectors.toList());
-		return new PageImpl<>(feedDtoList, pageable, feedReadList.getTotalElements());
+
+		return new PageImpl<>(feedDtoList, pageable, results.getMappedResults().size());
 	}
 
 	//feed thumbnail List 조회
