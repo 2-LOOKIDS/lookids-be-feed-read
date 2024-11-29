@@ -10,10 +10,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Getter
 @NoArgsConstructor
 @Document
+@ToString
 public class FeedRead {
 	@Id
 	private ObjectId id;

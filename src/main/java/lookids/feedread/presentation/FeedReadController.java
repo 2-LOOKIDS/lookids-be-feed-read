@@ -24,13 +24,24 @@ public class FeedReadController {
 
 	private final FeedReadService feedReadService;
 
-	@Operation(summary = "feed List 조회 API", description = "feed List로 조회하는 API 입니다.", tags = {"Feed"})
-	@GetMapping("/feedList")
-	public BaseResponse<Page<FeedListResponseDto>> readFeedList(
+	// @Operation(summary = "feed List 조회 API", description = "feed List로 조회하는 API 입니다.", tags = {"Feed"})
+	// @GetMapping("/feedList")
+	// public BaseResponse<Page<FeedListResponseDto>> readFeedList(
+	// 	@RequestHeader String uuid,
+	// 	@RequestParam(defaultValue = "0") int page,
+	// 	@RequestParam(defaultValue = "10") int size) {
+	// 	Page<FeedListResponseDto> feedRead = feedReadService.readFeedList(uuid, page, size);
+	// 	return new BaseResponse<>(feedRead);
+	// }
+
+	@Operation(summary = "feed List 조회 API", description = "tag 필터링을 feed List를 조회하는 API 입니다.", tags = {"Feed"})
+	@GetMapping("/filter")
+	public BaseResponse<Page<FeedListResponseDto>> readFeedAndTagList(
 		@RequestHeader String uuid,
+		@RequestParam(required = false) String tag,
 		@RequestParam(defaultValue = "0") int page,
 		@RequestParam(defaultValue = "10") int size) {
-		Page<FeedListResponseDto> feedRead = feedReadService.readFeedList(uuid, page, size);
+		Page<FeedListResponseDto> feedRead = feedReadService.readFeedAndTagList(uuid, tag, page, size);
 		return new BaseResponse<>(feedRead);
 	}
 
@@ -38,6 +49,7 @@ public class FeedReadController {
 	@GetMapping("/favoriteList")
 	public BaseResponse<Page<FeedReadResponseDto>> readFeedFavoriteList(
 		@RequestHeader String uuid,
+		@RequestParam String tag,
 		@RequestParam(defaultValue = "0") int page,
 		@RequestParam(defaultValue = "10") int size) {
 		Page<FeedReadResponseDto> feedRead = feedReadService.readFeedFavoriteList(uuid, page, size);
