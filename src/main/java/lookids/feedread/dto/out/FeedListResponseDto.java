@@ -14,7 +14,7 @@ import lookids.feedread.domain.FeedRead;
 @NoArgsConstructor
 @ToString
 public class FeedListResponseDto {
-	// private String uuid;
+	private String uuid;
 	private String nickname;
 	private String tag;
 	private String image;
@@ -23,9 +23,11 @@ public class FeedListResponseDto {
 	private String content;
 	private LocalDateTime createdAt;
 
+	private List<String> tagList;
+
 	@Builder
-	public FeedListResponseDto(String uuid, String nickname, String tag, String image, String feedCode, List<String> mediaUrlList, String content, LocalDateTime createdAt) {
-		// this.uuid = uuid;
+	public FeedListResponseDto(List<String> tagList, String uuid, String nickname, String tag, String image, String feedCode, List<String> mediaUrlList, String content, LocalDateTime createdAt) {
+		this.uuid = uuid;
 		this.nickname = nickname;
 		this.tag = tag;
 		this.image = image;
@@ -33,6 +35,7 @@ public class FeedListResponseDto {
 		this.mediaUrlList = mediaUrlList;
 		this.content = content;
 		this.createdAt = createdAt;
+		this.tagList = tagList;
 	}
 
 	public static FeedListResponseDto toDto(FeedRead feedRead) {
@@ -48,6 +51,7 @@ public class FeedListResponseDto {
 				.atZone(ZoneId.systemDefault())
 				.withZoneSameInstant(ZoneId.of("Asia/Seoul"))
 				.toLocalDateTime())
+			.tagList(feedRead.getTagList())
 			.build();
 	}
 }

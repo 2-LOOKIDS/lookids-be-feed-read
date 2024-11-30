@@ -34,8 +34,8 @@ public class FeedReadController {
 	// 	return new BaseResponse<>(feedRead);
 	// }
 
-	@Operation(summary = "feed List 조회 API", description = "tag 필터링을 feed List를 조회하는 API 입니다.", tags = {"Feed"})
-	@GetMapping("/filter")
+	@Operation(summary = "feed List 조회 API", description = "feed List로 조회하는 API 입니다.", tags = {"Feed"})
+	@GetMapping("/feedList")
 	public BaseResponse<Page<FeedListResponseDto>> readFeedAndTagList(
 		@RequestHeader String uuid,
 		@RequestParam(required = false) String tag,

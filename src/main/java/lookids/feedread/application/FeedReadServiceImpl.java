@@ -6,23 +6,31 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import org.springframework.boot.autoconfigure.ldap.embedded.EmbeddedLdapProperties;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.ExecutableAggregationOperation;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
+import org.springframework.data.mongodb.core.aggregation.SortOperation;
+import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.validation.constraints.AssertFalse;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import lookids.common.config.SwaggerConfig;
 import lookids.common.entity.BaseResponseStatus;
 import lookids.common.exception.BaseException;
 import lookids.feedread.domain.FeedRead;
@@ -199,13 +207,11 @@ public class FeedReadServiceImpl implements FeedReadService {
 		if (findUuid.isEmpty()) {
 			throw new BaseException(BaseResponseStatus.NO_EXIST_USER);
 		}
-
-		// 정렬하기 위해 사용하는 uuid, stata, tagList가 뭔지
+		//어떤 키워드를 기준으로 정렬하는지
 		Criteria criteria = Criteria.where("uuid").is(uuid).and("state").is(false);
 		if (tag != null && !tag.isEmpty()) {
 			criteria.and("tagList").in(tag);
 		}
-
 		// Aggregation
 		Aggregation aggregation = Aggregation.newAggregation(
 			Aggregation.match(criteria),
@@ -214,9 +220,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 			Aggregation.limit(size)
 		);
 		AggregationResults<FeedRead> results = mongoTemplate.aggregate(aggregation, "feedRead", FeedRead.class);
-
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
-		Page<FeedRead> feedReadList = feedReadRepository.findByUuidAndStateFalse(uuid, pageable);
 
 		List<FeedListResponseDto> feedDtoList = results.getMappedResults()
 			.stream()
