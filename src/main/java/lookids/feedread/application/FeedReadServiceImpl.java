@@ -6,35 +6,27 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-import org.springframework.boot.autoconfigure.ldap.embedded.EmbeddedLdapProperties;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.ExecutableAggregationOperation;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
-import org.springframework.data.mongodb.core.aggregation.GroupOperation;
-import org.springframework.data.mongodb.core.aggregation.MatchOperation;
-import org.springframework.data.mongodb.core.aggregation.SortOperation;
-import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.validation.constraints.AssertFalse;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import lookids.common.config.SwaggerConfig;
 import lookids.common.entity.BaseResponseStatus;
 import lookids.common.exception.BaseException;
 import lookids.feedread.domain.FeedRead;
-import lookids.feedread.dto.in.FavoriteRequestKafkaDto;
+import lookids.feedread.dto.in.UuidRequestKafkaDto;
 import lookids.feedread.dto.in.FeedDeleteKafkaDto;
 import lookids.feedread.dto.out.FavoriteResponseDto;
 import lookids.feedread.dto.in.FeedKafkaDto;
@@ -44,6 +36,7 @@ import lookids.feedread.dto.out.FeedReadResponseDto;
 import lookids.feedread.dto.in.UserImageKafkaDto;
 import lookids.feedread.dto.in.UserKafkaDto;
 import lookids.feedread.dto.in.UserNickNameKafkaDto;
+import lookids.feedread.dto.out.FollowResponseDto;
 import lookids.feedread.infrastructure.FeedReadRepository;
 
 @Slf4j
@@ -55,7 +48,9 @@ public class FeedReadServiceImpl implements FeedReadService {
 	private final ConcurrentHashMap<String, CompletableFuture<FeedKafkaDto>> feedEventFutureMap = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, CompletableFuture<UserKafkaDto>> userEventFutureMap = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, CompletableFuture<FavoriteResponseDto>> favoriteEventFutureMap = new ConcurrentHashMap<>();
-	private final KafkaTemplate<String, FavoriteRequestKafkaDto> favoriteKafkaTemplate;
+	private final ConcurrentHashMap<String, CompletableFuture<FollowResponseDto>> followEventFutureMap = new ConcurrentHashMap<>();
+	private final KafkaTemplate<String, UuidRequestKafkaDto> favoriteKafkaTemplate;
+	private final KafkaTemplate<String, UuidRequestKafkaDto> followKafkaTemplate;
 	private final FeedReadRepository feedReadRepository;
 	private final MongoTemplate mongoTemplate;
 
@@ -152,7 +147,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 			throw new BaseException(BaseResponseStatus.NO_EXIST_USER);
 		}
 
-		favoriteKafkaTemplate.send("favorite-request", FavoriteRequestKafkaDto.builder().uuid(uuid).build());
+		favoriteKafkaTemplate.send("favorite-request", UuidRequestKafkaDto.builder().uuid(uuid).build());
 		CompletableFuture<FavoriteResponseDto> futureFeedCodeList = new CompletableFuture<>();
 		favoriteEventFutureMap.put(uuid, futureFeedCodeList);
 
@@ -185,21 +180,6 @@ public class FeedReadServiceImpl implements FeedReadService {
 		}
 	}
 
-	// //uuid feed List 조회
-	// @Override
-	// public Page<FeedListResponseDto> readFeedList(String uuid, int page, int size) {
-	// 	List<FeedRead> findUuid = feedReadRepository.findAllByUuid(uuid);
-	// 	if (findUuid.isEmpty()) {
-	// 		throw new BaseException(BaseResponseStatus.NO_EXIST_USER);
-	// 	}
-	// 	Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
-	// 	Page<FeedRead> feedReadList = feedReadRepository.findByUuidAndStateFalse(uuid, pageable);
-	// 	List<FeedListResponseDto> feedDtoList = feedReadList.stream()
-	// 		.map(FeedListResponseDto::toDto)
-	// 		.collect(Collectors.toList());
-	// 	return new PageImpl<>(feedDtoList, pageable, feedReadList.getTotalElements());
-	// }
-
 	//uuid feed List 조회 (uuid가 팔로우 한 유저들의 피드 목록 + tag 필터링 포함 조회)
 	@Override
 	public Page<FeedListResponseDto> readFeedAndTagList(String uuid, String tag, int page, int size) {
@@ -207,8 +187,23 @@ public class FeedReadServiceImpl implements FeedReadService {
 		if (findUuid.isEmpty()) {
 			throw new BaseException(BaseResponseStatus.NO_EXIST_USER);
 		}
+
+		followKafkaTemplate.send("follow-request", UuidRequestKafkaDto.builder().uuid(uuid).build());
+		log.info("consume: {} ", uuid);
+		CompletableFuture<FollowResponseDto> futureUuidList = new CompletableFuture<>();
+		followEventFutureMap.put(uuid, futureUuidList);
+
+		// 팔로우 목록 kafka 대기
+		FollowResponseDto followResponseDto = null;
+		try {
+			followResponseDto = futureUuidList.get();
+		} catch (InterruptedException | ExecutionException e) {
+			log.error("Error while fetching favorite feed codes", e);
+		}
+		List<String> FollowUuidList = followResponseDto.getFollowUuid();
+
 		//어떤 키워드를 기준으로 정렬하는지
-		Criteria criteria = Criteria.where("uuid").is(uuid).and("state").is(false);
+		Criteria criteria = Criteria.where("uuid").in(FollowUuidList).and("state").is(false);
 		if (tag != null && !tag.isEmpty()) {
 			criteria.and("tagList").in(tag);
 		}
@@ -228,6 +223,33 @@ public class FeedReadServiceImpl implements FeedReadService {
 			.collect(Collectors.toList());
 
 		return new PageImpl<>(feedDtoList, pageable, results.getMappedResults().size());
+	}
+	// //uuid feed List 조회
+	// @Override
+	// public Page<FeedListResponseDto> readFeedList(String uuid, int page, int size) {
+	// 	List<FeedRead> findUuid = feedReadRepository.findAllByUuid(uuid);
+	// 	if (findUuid.isEmpty()) {
+	// 		throw new BaseException(BaseResponseStatus.NO_EXIST_USER);
+	// 	}
+	// 	Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
+	// 	Page<FeedRead> feedReadList = feedReadRepository.findByUuidAndStateFalse(uuid, pageable);
+	// 	List<FeedListResponseDto> feedDtoList = feedReadList.stream()
+	// 		.map(FeedListResponseDto::toDto)
+	// 		.collect(Collectors.toList());
+	// 	return new PageImpl<>(feedDtoList, pageable, feedReadList.getTotalElements());
+	// }
+
+	// 좋아요 서비스에서 주는 Dto consume
+	@KafkaListener(topics = "follow-response", groupId = "feed-read-group", containerFactory = "followEventListenerContainerFactory")
+	public void readFeedFollow(FollowResponseDto followResponseDto) {
+		log.info("consume: {}", followResponseDto);
+		String uuid = followResponseDto.getUuid();
+		CompletableFuture<FollowResponseDto> futureUuidList = followEventFutureMap.get(uuid);
+		if (futureUuidList != null) {
+			futureUuidList.complete(followResponseDto);
+		} else {
+			log.warn("No future Uuid: {}", uuid);
+		}
 	}
 
 	//feed thumbnail List 조회

@@ -21,6 +21,7 @@ import lookids.feedread.dto.in.FeedKafkaDto;
 import lookids.feedread.dto.in.UserImageKafkaDto;
 import lookids.feedread.dto.in.UserKafkaDto;
 import lookids.feedread.dto.in.UserNickNameKafkaDto;
+import lookids.feedread.dto.out.FollowResponseDto;
 
 @EnableKafka
 @Configuration
@@ -124,6 +125,25 @@ public class KafkaConfig {
 	public ConcurrentKafkaListenerContainerFactory<String, FavoriteResponseDto> favoriteEventListenerContainerFactory() {
 		ConcurrentKafkaListenerContainerFactory<String, FavoriteResponseDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
 		factory.setConsumerFactory(favoriteConsumerFactory());
+		return factory;
+	}
+
+	@Bean
+	public ConsumerFactory<String, FollowResponseDto> followConsumerFactory() {
+		Map<String, Object> props = new HashMap<>();
+		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
+		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
+		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
+		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
+			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(FollowResponseDto.class, false)));
+	}
+
+	@Bean
+	public ConcurrentKafkaListenerContainerFactory<String, FollowResponseDto> followEventListenerContainerFactory() {
+		ConcurrentKafkaListenerContainerFactory<String, FollowResponseDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
+		factory.setConsumerFactory(followConsumerFactory());
 		return factory;
 	}
 
