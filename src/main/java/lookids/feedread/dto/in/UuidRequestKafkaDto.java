@@ -8,12 +8,12 @@ import lombok.ToString;
 @Getter
 @NoArgsConstructor
 @ToString
-public class FavoriteRequestKafkaDto {
+public class UuidRequestKafkaDto {
 
 	private String uuid;
 
 	@Builder
-	public FavoriteRequestKafkaDto(String uuid) {
+	public UuidRequestKafkaDto(String uuid) {
 		this.uuid = uuid;
 	}
 }
