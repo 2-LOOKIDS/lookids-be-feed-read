@@ -49,7 +49,6 @@ public class FeedReadController {
 	@GetMapping("/favoriteList")
 	public BaseResponse<Page<FeedReadResponseDto>> readFeedFavoriteList(
 		@RequestHeader String uuid,
-		@RequestParam String tag,
 		@RequestParam(defaultValue = "0") int page,
 		@RequestParam(defaultValue = "10") int size) {
 		Page<FeedReadResponseDto> feedRead = feedReadService.readFeedFavoriteList(uuid, page, size);

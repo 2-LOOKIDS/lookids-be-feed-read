@@ -146,8 +146,8 @@ public class FeedReadServiceImpl implements FeedReadService {
 		if (findUuid.isEmpty()) {
 			throw new BaseException(BaseResponseStatus.NO_EXIST_USER);
 		}
-
-		favoriteKafkaTemplate.send("favorite-request", UuidRequestKafkaDto.builder().uuid(uuid).build());
+		UuidRequestKafkaDto favoriteCodeRequestDto = UuidRequestKafkaDto.toDto(uuid);
+		favoriteKafkaTemplate.send("favorite-request", favoriteCodeRequestDto);
 		CompletableFuture<FavoriteResponseDto> futureFeedCodeList = new CompletableFuture<>();
 		favoriteEventFutureMap.put(uuid, futureFeedCodeList);
 
@@ -173,11 +173,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 	public void readFeedFavorite(FavoriteResponseDto favoriteResponseDto) {
 		String uuid = favoriteResponseDto.getUuid();
 		CompletableFuture<FavoriteResponseDto> futureFeedCodeList = favoriteEventFutureMap.get(uuid);
-		if (futureFeedCodeList != null) {
-			futureFeedCodeList.complete(favoriteResponseDto);
-		} else {
-			log.warn("No future Uuid: {}", uuid);
-		}
+		futureFeedCodeList.complete(favoriteResponseDto);
 	}
 
 	//uuid feed List 조회 (uuid가 팔로우 한 유저들의 피드 목록 + tag 필터링 포함 조회)
@@ -187,9 +183,8 @@ public class FeedReadServiceImpl implements FeedReadService {
 		if (findUuid.isEmpty()) {
 			throw new BaseException(BaseResponseStatus.NO_EXIST_USER);
 		}
-
-		followKafkaTemplate.send("follow-request", UuidRequestKafkaDto.builder().uuid(uuid).build());
-		log.info("consume: {} ", uuid);
+		UuidRequestKafkaDto followUuidRequestDto = UuidRequestKafkaDto.toDto(uuid);
+		followKafkaTemplate.send("follow-request", followUuidRequestDto);
 		CompletableFuture<FollowResponseDto> futureUuidList = new CompletableFuture<>();
 		followEventFutureMap.put(uuid, futureUuidList);
 
@@ -205,17 +200,15 @@ public class FeedReadServiceImpl implements FeedReadService {
 		//어떤 키워드를 기준으로 정렬하는지
 		Criteria criteria = Criteria.where("uuid").in(FollowUuidList).and("state").is(false);
 		if (tag != null && !tag.isEmpty()) {
-			criteria.and("tagList").in(tag);
-		}
+			criteria.and("tagList").in(tag);}
 		// Aggregation
 		Aggregation aggregation = Aggregation.newAggregation(
 			Aggregation.match(criteria),
 			Aggregation.sort(Sort.by(Sort.Direction.DESC, "createdAt")),
 			Aggregation.skip((long) page * size),
-			Aggregation.limit(size)
-		);
+			Aggregation.limit(size));
 		AggregationResults<FeedRead> results = mongoTemplate.aggregate(aggregation, "feedRead", FeedRead.class);
-		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
+		Pageable pageable = PageRequest.of(page, size);
 
 		List<FeedListResponseDto> feedDtoList = results.getMappedResults()
 			.stream()
@@ -224,32 +217,13 @@ public class FeedReadServiceImpl implements FeedReadService {
 
 		return new PageImpl<>(feedDtoList, pageable, results.getMappedResults().size());
 	}
-	// //uuid feed List 조회
-	// @Override
-	// public Page<FeedListResponseDto> readFeedList(String uuid, int page, int size) {
-	// 	List<FeedRead> findUuid = feedReadRepository.findAllByUuid(uuid);
-	// 	if (findUuid.isEmpty()) {
-	// 		throw new BaseException(BaseResponseStatus.NO_EXIST_USER);
-	// 	}
-	// 	Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
-	// 	Page<FeedRead> feedReadList = feedReadRepository.findByUuidAndStateFalse(uuid, pageable);
-	// 	List<FeedListResponseDto> feedDtoList = feedReadList.stream()
-	// 		.map(FeedListResponseDto::toDto)
-	// 		.collect(Collectors.toList());
-	// 	return new PageImpl<>(feedDtoList, pageable, feedReadList.getTotalElements());
-	// }
 
-	// 좋아요 서비스에서 주는 Dto consume
+	// 팔로우 피드 조회를 위한 Dto consume
 	@KafkaListener(topics = "follow-response", groupId = "feed-read-group", containerFactory = "followEventListenerContainerFactory")
 	public void readFeedFollow(FollowResponseDto followResponseDto) {
-		log.info("consume: {}", followResponseDto);
 		String uuid = followResponseDto.getUuid();
 		CompletableFuture<FollowResponseDto> futureUuidList = followEventFutureMap.get(uuid);
-		if (futureUuidList != null) {
-			futureUuidList.complete(followResponseDto);
-		} else {
-			log.warn("No future Uuid: {}", uuid);
-		}
+		futureUuidList.complete(followResponseDto);
 	}
 
 	//feed thumbnail List 조회
@@ -257,8 +231,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 	public Page<FeedReadResponseDto> readFeedThumbnailList(String uuid, int page, int size) {
 		List<FeedRead> findUuid = feedReadRepository.findAllByUuid(uuid);
 		if (findUuid.isEmpty()) {
-			throw new BaseException(BaseResponseStatus.NO_EXIST_USER);
-		}
+			throw new BaseException(BaseResponseStatus.NO_EXIST_USER);}
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
 		Page<FeedRead> feedReadList = feedReadRepository.findByUuidAndStateFalse(uuid, pageable);
 		List<FeedReadResponseDto> feedDtoList = feedReadList.getContent().stream()
