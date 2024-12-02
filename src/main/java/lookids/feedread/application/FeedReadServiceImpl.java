@@ -90,9 +90,9 @@ public class FeedReadServiceImpl implements FeedReadService {
 					.state(feedKafkaDto.isState())
 					.createdAt(feedKafkaDto.getCreatedAt())
 					.uuid(userKafkaDto.getUuid())
-					// .tag(userKafkaDto.getTag())
-					// .image(userKafkaDto.getImage())
-					// .nickname(userKafkaDto.getNickname())
+					.tag(userKafkaDto.getTag())
+					.image(userKafkaDto.getImage())
+					.nickname(userKafkaDto.getNickname())
 					.build();
 				feedReadRepository.save(feedRead);
 				feedEventFutureMap.remove(uuid);
@@ -176,7 +176,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 		futureFeedCodeList.complete(favoriteResponseDto);
 	}
 
-	//uuid feed List 조회 (uuid가 팔로우 한 유저들의 피드 목록 + tag 필터링 포함 조회)
+	//uuid feed List 조회 (유저가 팔로우 한 유저들의 피드 목록 + tag 필터링 포함 조회)
 	@Override
 	public Page<FeedListResponseDto> readFeedAndTagList(String uuid, String tag, int page, int size) {
 		List<FeedRead> findUuid = feedReadRepository.findAllByUuid(uuid);
@@ -201,6 +201,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 		Criteria criteria = Criteria.where("uuid").in(FollowUuidList).and("state").is(false);
 		if (tag != null && !tag.isEmpty()) {
 			criteria.and("tagList").in(tag);}
+
 		// Aggregation
 		Aggregation aggregation = Aggregation.newAggregation(
 			Aggregation.match(criteria),
