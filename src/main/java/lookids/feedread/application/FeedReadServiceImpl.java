@@ -195,10 +195,10 @@ public class FeedReadServiceImpl implements FeedReadService {
 		} catch (InterruptedException | ExecutionException e) {
 			log.error("Error while fetching favorite feed codes", e);
 		}
-		List<String> FollowUuidList = followResponseDto.getFollowUuid();
+		List<String> UuidList = followResponseDto.getFollowUuid();
 
 		//어떤 키워드를 기준으로 정렬하는지
-		Criteria criteria = Criteria.where("uuid").in(FollowUuidList).and("state").is(false);
+		Criteria criteria = Criteria.where("uuid").in(UuidList).and("state").is(false);
 		if (tag != null && !tag.isEmpty()) {
 			criteria.and("tagList").in(tag);}
 
@@ -208,14 +208,22 @@ public class FeedReadServiceImpl implements FeedReadService {
 			Aggregation.sort(Sort.by(Sort.Direction.DESC, "createdAt")),
 			Aggregation.skip((long) page * size),
 			Aggregation.limit(size));
-		Pageable pageable = PageRequest.of(page, size);
-		Page<FeedRead> feedReadList = feedReadRepository.findByUuidAndStateFalse(uuid, pageable);
+		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
+		Page<FeedRead> feedReadList = feedReadRepository.findByUuidInAndStateFalse(UuidList, pageable);
 
 		List<FeedListResponseDto> feedDtoList = feedReadList
 			.stream()
 			.map(FeedListResponseDto::toDto)
 			.collect(Collectors.toList());
 		return new PageImpl<>(feedDtoList, pageable, feedReadList.getTotalElements());
+	}
+
+	// 팔로우 피드 조회를 위한 Dto consume
+	@KafkaListener(topics = "follow-response", groupId = "feed-read-group", containerFactory = "followEventListenerContainerFactory")
+	public void readFeedFollow(FollowResponseDto followResponseDto) {
+		String uuid = followResponseDto.getUuid();
+		CompletableFuture<FollowResponseDto> futureUuidList = followEventFutureMap.get(uuid);
+		futureUuidList.complete(followResponseDto);
 	}
 
 	//랜덤 조회(비회원)
@@ -233,14 +241,6 @@ public class FeedReadServiceImpl implements FeedReadService {
 
 		Pageable pageable = PageRequest.of(page, size);
 		return new PageImpl<>(feedRandomList, pageable, results.getMappedResults().size());
-	}
-
-	// 팔로우 피드 조회를 위한 Dto consume
-	@KafkaListener(topics = "follow-response", groupId = "feed-read-group", containerFactory = "followEventListenerContainerFactory")
-	public void readFeedFollow(FollowResponseDto followResponseDto) {
-		String uuid = followResponseDto.getUuid();
-		CompletableFuture<FollowResponseDto> futureUuidList = followEventFutureMap.get(uuid);
-		futureUuidList.complete(followResponseDto);
 	}
 
 	//feed thumbnail List 조회
