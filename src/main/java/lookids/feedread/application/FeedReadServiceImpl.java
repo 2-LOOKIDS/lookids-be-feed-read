@@ -219,6 +219,23 @@ public class FeedReadServiceImpl implements FeedReadService {
 		return new PageImpl<>(feedDtoList, pageable, results.getMappedResults().size());
 	}
 
+	//랜덤 조회(비회원)
+	@Override
+	public Page<FeedListResponseDto> readFeedRandomList(int page, int size) {
+		Aggregation aggregation = Aggregation.newAggregation(
+			Aggregation.sample(page * size + size),
+			Aggregation.skip((long) page * size),
+			Aggregation.limit(size));
+		AggregationResults<FeedRead> results = mongoTemplate.aggregate(aggregation, "feedRead", FeedRead.class);
+
+		List<FeedListResponseDto> feedRandomList = results.getMappedResults()
+			.stream().map(FeedListResponseDto::toDto)
+			.toList();
+
+		Pageable pageable = PageRequest.of(page, size);
+		return new PageImpl<>(feedRandomList, pageable, results.getMappedResults().size());
+	}
+
 	// 팔로우 피드 조회를 위한 Dto consume
 	@KafkaListener(topics = "follow-response", groupId = "feed-read-group", containerFactory = "followEventListenerContainerFactory")
 	public void readFeedFollow(FollowResponseDto followResponseDto) {
