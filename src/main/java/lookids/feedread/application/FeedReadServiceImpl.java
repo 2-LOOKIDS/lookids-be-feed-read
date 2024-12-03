@@ -207,7 +207,12 @@ public class FeedReadServiceImpl implements FeedReadService {
 			Aggregation.skip((long) page * size),
 			Aggregation.limit(size));
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
-		Page<FeedRead> feedReadList = feedReadRepository.findByUuidInAndStateFalse(UuidList, pageable);
+		Page<FeedRead> feedReadList;
+		if (tag != null && !tag.isEmpty()) {
+			feedReadList = feedReadRepository.findByUuidInAndStateFalseAndTagListIn(UuidList, tag, pageable);
+		} else {
+			feedReadList = feedReadRepository.findByUuidInAndStateFalse(UuidList, pageable);
+		}
 
 		List<FeedListResponseDto> feedDtoList = feedReadList
 			.stream()
