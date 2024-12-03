@@ -13,7 +13,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -90,9 +89,9 @@ public class FeedReadServiceImpl implements FeedReadService {
 					.state(feedKafkaDto.isState())
 					.createdAt(feedKafkaDto.getCreatedAt())
 					.uuid(userKafkaDto.getUuid())
-					// .tag(userKafkaDto.getTag())
-					// .image(userKafkaDto.getImage())
-					// .nickname(userKafkaDto.getNickname())
+					.tag(userKafkaDto.getTag())
+					.image(userKafkaDto.getImage())
+					.nickname(userKafkaDto.getNickname())
 					.build();
 				feedReadRepository.save(feedRead);
 				feedEventFutureMap.remove(uuid);
