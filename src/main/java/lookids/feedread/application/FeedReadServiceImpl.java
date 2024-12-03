@@ -26,16 +26,16 @@ import lombok.extern.slf4j.Slf4j;
 import lookids.common.entity.BaseResponseStatus;
 import lookids.common.exception.BaseException;
 import lookids.feedread.domain.FeedRead;
-import lookids.feedread.dto.in.UuidRequestKafkaDto;
 import lookids.feedread.dto.in.FeedDeleteKafkaDto;
-import lookids.feedread.dto.out.FavoriteResponseDto;
 import lookids.feedread.dto.in.FeedKafkaDto;
-import lookids.feedread.dto.out.FeedListResponseDto;
-import lookids.feedread.dto.out.FeedReadDetailResponseDto;
-import lookids.feedread.dto.out.FeedReadResponseDto;
 import lookids.feedread.dto.in.UserImageKafkaDto;
 import lookids.feedread.dto.in.UserKafkaDto;
 import lookids.feedread.dto.in.UserNickNameKafkaDto;
+import lookids.feedread.dto.in.UuidRequestKafkaDto;
+import lookids.feedread.dto.out.FavoriteResponseDto;
+import lookids.feedread.dto.out.FeedListResponseDto;
+import lookids.feedread.dto.out.FeedReadDetailResponseDto;
+import lookids.feedread.dto.out.FeedReadResponseDto;
 import lookids.feedread.dto.out.FollowResponseDto;
 import lookids.feedread.infrastructure.FeedReadRepository;
 
@@ -208,15 +208,14 @@ public class FeedReadServiceImpl implements FeedReadService {
 			Aggregation.sort(Sort.by(Sort.Direction.DESC, "createdAt")),
 			Aggregation.skip((long) page * size),
 			Aggregation.limit(size));
-		AggregationResults<FeedRead> results = mongoTemplate.aggregate(aggregation, "feedRead", FeedRead.class);
 		Pageable pageable = PageRequest.of(page, size);
+		Page<FeedRead> feedReadList = feedReadRepository.findByUuidAndStateFalse(uuid, pageable);
 
-		List<FeedListResponseDto> feedDtoList = results.getMappedResults()
+		List<FeedListResponseDto> feedDtoList = feedReadList
 			.stream()
 			.map(FeedListResponseDto::toDto)
 			.collect(Collectors.toList());
-
-		return new PageImpl<>(feedDtoList, pageable, results.getMappedResults().size());
+		return new PageImpl<>(feedDtoList, pageable, feedReadList.getTotalElements());
 	}
 
 	//랜덤 조회(비회원)
