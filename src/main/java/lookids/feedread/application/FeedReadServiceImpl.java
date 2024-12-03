@@ -90,9 +90,9 @@ public class FeedReadServiceImpl implements FeedReadService {
 					.state(feedKafkaDto.isState())
 					.createdAt(feedKafkaDto.getCreatedAt())
 					.uuid(userKafkaDto.getUuid())
-					.tag(userKafkaDto.getTag())
-					.image(userKafkaDto.getImage())
-					.nickname(userKafkaDto.getNickname())
+					// .tag(userKafkaDto.getTag())
+					// .image(userKafkaDto.getImage())
+					// .nickname(userKafkaDto.getNickname())
 					.build();
 				feedReadRepository.save(feedRead);
 				feedEventFutureMap.remove(uuid);
@@ -205,7 +205,6 @@ public class FeedReadServiceImpl implements FeedReadService {
 		// Aggregation
 		Aggregation aggregation = Aggregation.newAggregation(
 			Aggregation.match(criteria),
-			Aggregation.sort(Sort.by(Sort.Direction.DESC, "createdAt")),
 			Aggregation.skip((long) page * size),
 			Aggregation.limit(size));
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
@@ -233,14 +232,12 @@ public class FeedReadServiceImpl implements FeedReadService {
 			Aggregation.sample(page * size + size),
 			Aggregation.skip((long) page * size),
 			Aggregation.limit(size));
-		AggregationResults<FeedRead> results = mongoTemplate.aggregate(aggregation, "feedRead", FeedRead.class);
-
-		List<FeedListResponseDto> feedRandomList = results.getMappedResults()
+		Pageable pageable = PageRequest.of(page, size);
+		Page<FeedRead> feedReadList = feedReadRepository.findByStateFalse(pageable);
+		List<FeedListResponseDto> feedRandomList = feedReadList
 			.stream().map(FeedListResponseDto::toDto)
 			.toList();
-
-		Pageable pageable = PageRequest.of(page, size);
-		return new PageImpl<>(feedRandomList, pageable, results.getMappedResults().size());
+		return new PageImpl<>(feedRandomList, pageable, feedReadList.getTotalElements());
 	}
 
 	//feed thumbnail List 조회
