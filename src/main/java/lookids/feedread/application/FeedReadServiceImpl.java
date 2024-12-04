@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -79,20 +80,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 		CompletableFuture<FeedKafkaDto> feedEventFuture = feedEventFutureMap.get(uuid);
 		if (userProfileEventFuture != null && feedEventFuture != null) {
 			userProfileEventFuture.thenCombine(feedEventFuture, (userKafkaDto, feedKafkaDto) -> {
-				FeedRead feedRead = FeedRead.builder()
-					.feedCode(feedKafkaDto.getFeedCode())
-					.petCode(feedKafkaDto.getPetCode())
-					.uuid(feedKafkaDto.getUuid())
-					.content(feedKafkaDto.getContent())
-					.tagList(feedKafkaDto.getTagList())
-					.mediaUrlList(feedKafkaDto.getMediaUrlList())
-					.state(feedKafkaDto.isState())
-					.createdAt(feedKafkaDto.getCreatedAt())
-					.uuid(userKafkaDto.getUuid())
-					.tag(userKafkaDto.getTag())
-					.image(userKafkaDto.getImage())
-					.nickname(userKafkaDto.getNickname())
-					.build();
+				FeedRead feedRead = FeedRead.toDto(feedKafkaDto, userKafkaDto);
 				feedReadRepository.save(feedRead);
 				feedEventFutureMap.remove(uuid);
 				userEventFutureMap.remove(uuid);
@@ -110,7 +98,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 			throw new BaseException(BaseResponseStatus.NO_EXIST_FEED);
 		}
 		List<FeedRead> nickNameUpdate = findUuid.stream()
-			.map(feedRead -> userNickNameKafkaDto.toNickNameUpdate(feedRead))
+			.map(userNickNameKafkaDto::toNickNameUpdate)
 			.collect(Collectors.toList());
 		feedReadRepository.saveAll(nickNameUpdate);
 	}
@@ -124,7 +112,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 			throw new BaseException(BaseResponseStatus.NO_EXIST_FEED);
 		}
 		List<FeedRead> ImageUpdate = findUuid.stream()
-			.map(feedRead -> userImageKafkaDto.toImageUpdate(feedRead))
+			.map(userImageKafkaDto::toImageUpdate)
 			.collect(Collectors.toList());
 		feedReadRepository.saveAll(ImageUpdate);
 	}
@@ -218,6 +206,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 			.stream()
 			.map(FeedListResponseDto::toDto)
 			.collect(Collectors.toList());
+
 		return new PageImpl<>(feedDtoList, pageable, feedReadList.getTotalElements());
 	}
 
@@ -233,15 +222,17 @@ public class FeedReadServiceImpl implements FeedReadService {
 	@Override
 	public Page<FeedListResponseDto> readFeedRandomList(int page, int size) {
 		Aggregation aggregation = Aggregation.newAggregation(
-			Aggregation.sample(page * size + size),
+			Aggregation.match(Criteria.where("state").is(false)),
+			Aggregation.sample(size),
 			Aggregation.skip((long) page * size),
 			Aggregation.limit(size));
+		List<FeedRead> feedReadList = mongoTemplate.aggregate(aggregation, "feedRead", FeedRead.class).getMappedResults();
+		long total = mongoTemplate.count(Query.query(Criteria.where("state").is(false)), "feedRead");
 		Pageable pageable = PageRequest.of(page, size);
-		Page<FeedRead> feedReadList = feedReadRepository.findByStateFalse(pageable);
 		List<FeedListResponseDto> feedRandomList = feedReadList
 			.stream().map(FeedListResponseDto::toDto)
 			.toList();
-		return new PageImpl<>(feedRandomList, pageable, feedReadList.getTotalElements());
+		return new PageImpl<>(feedRandomList, pageable, total);
 	}
 
 	//feed thumbnail List 조회

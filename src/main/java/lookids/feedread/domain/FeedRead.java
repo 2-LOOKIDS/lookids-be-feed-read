@@ -11,6 +11,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import lookids.feedread.dto.in.FeedKafkaDto;
+import lookids.feedread.dto.in.UserKafkaDto;
 
 @Getter
 @NoArgsConstructor
@@ -47,5 +49,22 @@ public class FeedRead {
 		this.nickname = nickname;
 		this.image = image;
 		this.tag = tag;
+	}
+
+	public static FeedRead toDto(FeedKafkaDto feedKafkaDto, UserKafkaDto userKafkaDto) {
+		return FeedRead.builder()
+			.feedCode(feedKafkaDto.getFeedCode())
+			.uuid(feedKafkaDto.getUuid())
+			.content(feedKafkaDto.getContent())
+			.state(feedKafkaDto.isState())
+			.petCode(feedKafkaDto.getPetCode())
+			.tagList(feedKafkaDto.getTagList())
+			.mediaUrlList(feedKafkaDto.getMediaUrlList())
+			.createdAt(feedKafkaDto.getCreatedAt())
+			.uuid(userKafkaDto.getUuid())
+			// .nickname(userKafkaDto.getNickname())
+			// .image(userKafkaDto.getImage())
+			// .tag(userKafkaDto.getTag())
+			.build();
 	}
 }
