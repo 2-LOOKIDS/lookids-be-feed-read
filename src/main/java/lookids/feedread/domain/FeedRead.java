@@ -62,9 +62,9 @@ public class FeedRead {
 			.mediaUrlList(feedKafkaDto.getMediaUrlList())
 			.createdAt(feedKafkaDto.getCreatedAt())
 			.uuid(userKafkaDto.getUuid())
-			// .nickname(userKafkaDto.getNickname())
-			// .image(userKafkaDto.getImage())
-			// .tag(userKafkaDto.getTag())
+			.nickname(userKafkaDto.getNickname())
+			.image(userKafkaDto.getImage())
+			.tag(userKafkaDto.getTag())
 			.build();
 	}
 }
