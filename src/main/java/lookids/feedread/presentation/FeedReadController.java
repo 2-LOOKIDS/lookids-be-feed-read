@@ -24,16 +24,6 @@ public class FeedReadController {
 
 	private final FeedReadService feedReadService;
 
-	// @Operation(summary = "feed List 조회 API", description = "feed List로 조회하는 API 입니다.", tags = {"Feed"})
-	// @GetMapping("/feedList")
-	// public BaseResponse<Page<FeedListResponseDto>> readFeedList(
-	// 	@RequestHeader String uuid,
-	// 	@RequestParam(defaultValue = "0") int page,
-	// 	@RequestParam(defaultValue = "10") int size) {
-	// 	Page<FeedListResponseDto> feedRead = feedReadService.readFeedList(uuid, page, size);
-	// 	return new BaseResponse<>(feedRead);
-	// }
-
 	@Operation(summary = "feed List 조회 API", description = "feed List로 조회하는 API 입니다.", tags = {"Feed"})
 	@GetMapping("/feedList")
 	public BaseResponse<Page<FeedListResponseDto>> readFeedAndTagList(
