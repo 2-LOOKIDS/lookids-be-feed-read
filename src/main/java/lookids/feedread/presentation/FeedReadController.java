@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import lookids.common.entity.BaseResponse;
 import lookids.feedread.application.FeedReadService;
 import lookids.feedread.dto.out.FeedListResponseDto;
@@ -17,7 +16,6 @@ import lookids.feedread.dto.out.FeedReadResponseDto;
 import lookids.feedread.vo.out.FeedReadDetailResponseVo;
 
 @RequiredArgsConstructor
-@Slf4j
 @RestController
 @RequestMapping("/read/feed")
 public class FeedReadController {

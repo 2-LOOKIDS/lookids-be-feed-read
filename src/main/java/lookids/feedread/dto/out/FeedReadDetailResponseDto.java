@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,8 +11,6 @@ import lookids.feedread.domain.FeedRead;
 import lookids.feedread.vo.out.FeedReadDetailResponseVo;
 
 @Getter
-@Builder
-@AllArgsConstructor
 @NoArgsConstructor
 public class FeedReadDetailResponseDto {
 
@@ -26,6 +23,20 @@ public class FeedReadDetailResponseDto {
 	private List<String> tagList;
 	private List<String> mediaUrlList;
 	private LocalDateTime createdAt;
+
+	@Builder
+	public FeedReadDetailResponseDto(String uuid, String nickname, String tag, String image, String petCode, String content,
+		List<String> tagList, List<String> mediaUrlList, LocalDateTime createdAt) {
+		this.uuid = uuid;
+		this.nickname = nickname;
+		this.tag = tag;
+		this.image = image;
+		this.petCode = petCode;
+		this.content = content;
+		this.tagList = tagList;
+		this.mediaUrlList = mediaUrlList;
+		this.createdAt = createdAt;
+	}
 
 	public static FeedReadDetailResponseDto toDto(FeedRead feedRead) {
 		return FeedReadDetailResponseDto.builder()
