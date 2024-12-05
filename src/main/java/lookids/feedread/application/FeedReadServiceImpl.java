@@ -139,7 +139,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 		List<FeedReadResponseDto> feedDtoList = mongoTemplate.find(query, FeedRead.class).stream()
 			.map(FeedReadResponseDto::toDto)
 			.collect(Collectors.toList());
-		long total = mongoTemplate.count(Query.query(Criteria.where("state").is(false)), "feedRead");
+		long total = mongoTemplate.count(Query.query(Criteria.where("feedCode").in(targetCodeList).and("state").is(false)), "feedRead");
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
 
 		return new PageImpl<>(feedDtoList, pageable, total);
@@ -208,16 +208,16 @@ public class FeedReadServiceImpl implements FeedReadService {
 
 	@Override
 	public Page<FeedReadResponseDto> readFeedThumbnailList(String uuid, int page, int size) {
-		Query query = new Query(Criteria.where("state").is(false).and("uuid").is(uuid));
-		query.with(Sort.by(Sort.Order.desc("createdAt")));
-		List<FeedRead> feedReadList = mongoTemplate.find(query, FeedRead.class);
-		Pageable pageable = PageRequest.of(page, size);
-		query.skip((long)pageable.getPageNumber() * pageable.getPageSize());
-		query.limit(pageable.getPageSize());
-		long total = mongoTemplate.count(Query.query(Criteria.where("state").is(false).and("uuid").is(uuid)), "feedRead");
-		List<FeedReadResponseDto> feedDtoList = feedReadList.stream()
+		Criteria criteria = Criteria.where("state").is(false).and("uuid").is(uuid);
+		Query query = new Query(criteria)
+				.with(Sort.by(Sort.Order.desc("createdAt")))
+				.skip((long) page * size)
+				.limit(size);
+		List<FeedReadResponseDto> feedDtoList = mongoTemplate.find(query, FeedRead.class).stream()
 			.map(FeedReadResponseDto::toDto)
 			.collect(Collectors.toList());
+		long total = mongoTemplate.count(Query.query(Criteria.where("state").is(false).and("uuid").is(uuid)), "feedRead");
+		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
 		return new PageImpl<>(feedDtoList, pageable, total);
 	}
 

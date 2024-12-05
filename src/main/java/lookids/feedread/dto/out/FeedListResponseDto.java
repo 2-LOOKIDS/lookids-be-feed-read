@@ -23,8 +23,6 @@ public class FeedListResponseDto {
 	private String content;
 	private LocalDateTime createdAt;
 
-	// private List<String> tagList;
-
 	@Builder
 	public FeedListResponseDto(String uuid, String nickname, String tag, String image, String feedCode, List<String> mediaUrlList, String content, LocalDateTime createdAt) {
 		this.uuid = uuid;
@@ -35,7 +33,6 @@ public class FeedListResponseDto {
 		this.mediaUrlList = mediaUrlList;
 		this.content = content;
 		this.createdAt = createdAt;
-		// this.tagList = tagList;
 	}
 
 	public static FeedListResponseDto toDto(FeedRead feedRead) {
@@ -51,7 +48,6 @@ public class FeedListResponseDto {
 				.atZone(ZoneId.systemDefault())
 				.withZoneSameInstant(ZoneId.of("Asia/Seoul"))
 				.toLocalDateTime())
-			// .tagList(feedRead.getTagList())
 			.build();
 	}
 }
