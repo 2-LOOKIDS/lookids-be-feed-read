@@ -139,7 +139,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 		List<FeedReadResponseDto> feedDtoList = mongoTemplate.find(query, FeedRead.class).stream()
 			.map(FeedReadResponseDto::toDto)
 			.collect(Collectors.toList());
-		long total = mongoTemplate.count(Query.query(Criteria.where("feedCode").in(targetCodeList).and("state").is(false)), "feedRead");
+		long total = mongoTemplate.count(Query.query(criteria), "feedRead");
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
 
 		return new PageImpl<>(feedDtoList, pageable, total);
@@ -216,7 +216,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 		List<FeedReadResponseDto> feedDtoList = mongoTemplate.find(query, FeedRead.class).stream()
 			.map(FeedReadResponseDto::toDto)
 			.collect(Collectors.toList());
-		long total = mongoTemplate.count(Query.query(Criteria.where("state").is(false).and("uuid").is(uuid)), "feedRead");
+		long total = mongoTemplate.count(Query.query(criteria), "feedRead");
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
 		return new PageImpl<>(feedDtoList, pageable, total);
 	}
