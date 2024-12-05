@@ -121,10 +121,6 @@ public class FeedReadServiceImpl implements FeedReadService {
 
 	@Override
 	public Page<FeedReadResponseDto> readFeedFavoriteList(String uuid, int page, int size) {
-		List<FeedRead> findUuid = feedReadRepository.findAllByUuid(uuid);
-		if (findUuid.isEmpty()) {
-			throw new BaseException(BaseResponseStatus.NO_EXIST_USER);
-		}
 		favoriteKafkaTemplate.send("favorite-request", UuidRequestKafkaDto.toDto(uuid));
 		CompletableFuture<FavoriteResponseDto> futureFeedCodeList = new CompletableFuture<>();
 		favoriteEventFutureMap.put(uuid, futureFeedCodeList);
@@ -158,10 +154,6 @@ public class FeedReadServiceImpl implements FeedReadService {
 
 	@Override
 	public Page<FeedListResponseDto> readFeedAndTagList(String uuid, String tag, int page, int size) {
-		List<FeedRead> findUuid = feedReadRepository.findAllByUuid(uuid);
-		if (findUuid.isEmpty()) {
-			throw new BaseException(BaseResponseStatus.NO_EXIST_USER);
-		}
 		followKafkaTemplate.send("follow-request", UuidRequestKafkaDto.toDto(uuid));
 		CompletableFuture<FollowResponseDto> futureUuidList = new CompletableFuture<>();
 		followEventFutureMap.put(uuid, futureUuidList);
@@ -216,9 +208,6 @@ public class FeedReadServiceImpl implements FeedReadService {
 
 	@Override
 	public Page<FeedReadResponseDto> readFeedThumbnailList(String uuid, int page, int size) {
-		List<FeedRead> findUuid = feedReadRepository.findAllByUuid(uuid);
-		if (findUuid.isEmpty()) {
-			throw new BaseException(BaseResponseStatus.NO_EXIST_USER);}
 		Query query = new Query(Criteria.where("state").is(false).and("uuid").is(uuid));
 		query.with(Sort.by(Sort.Order.desc("createdAt")));
 		List<FeedRead> feedReadList = mongoTemplate.find(query, FeedRead.class);
@@ -237,5 +226,10 @@ public class FeedReadServiceImpl implements FeedReadService {
 		FeedRead feedRead = feedReadRepository.findByFeedCodeAndStateFalse(feedCode)
 			.orElseThrow(() -> new BaseException(BaseResponseStatus.NO_EXIST_FEED));
 		return FeedReadDetailResponseDto.toDto(feedRead);
+	}
+
+	@Override
+	public Boolean readFeedCheck(String uuid, String feedCode) {
+		return feedReadRepository.existsByUuidAndFeedCode(uuid, feedCode);
 	}
 }

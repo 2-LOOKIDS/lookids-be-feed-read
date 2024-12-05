@@ -12,4 +12,5 @@ public interface FeedReadService {
 	Page<FeedListResponseDto> readFeedAndTagList(String uuid, String tag, int page, int size);
 	Page<FeedListResponseDto> readFeedRandomList(int page, int size);
 	FeedReadDetailResponseDto readFeedDetail(String feedCode);
+	Boolean readFeedCheck(String uuid, String feedCode);
 }

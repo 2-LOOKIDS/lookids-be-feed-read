@@ -64,10 +64,18 @@ public class FeedReadController {
 		return new BaseResponse<>(feedRead);
 	}
 
-	@Operation(summary = "feed 조회 API", description = "feedCode 기준으로 feed의 상세 내용을 조회하는 API 입니다.", tags = {"Feed"})
+	@Operation(summary = "feed 상세 조회 API", description = "feedCode 기준으로 feed의 상세 내용을 조회하는 API 입니다.", tags = {"Feed"})
 	@GetMapping("/detail")
 	public BaseResponse<FeedReadDetailResponseVo> readFeedDetail(@RequestParam String feedCode) {
 		return new BaseResponse<>(feedReadService.readFeedDetail(feedCode).toDetailVo());
+	}
+
+	@Operation(summary = "feed 작성 여부 조회 API", description = "본인이 작성한 피드인지 확인하는 API 입니다.", tags = {"Feed"})
+	@GetMapping("/check")
+	public BaseResponse<Boolean> readFeedCheck(
+		@RequestHeader String uuid,
+		@RequestParam String feedCode) {
+		return new BaseResponse<>(feedReadService.readFeedCheck(uuid, feedCode));
 	}
 }
 
