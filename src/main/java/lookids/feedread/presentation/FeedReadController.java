@@ -33,7 +33,17 @@ public class FeedReadController {
 		return new BaseResponse<>(feedRead);
 	}
 
-	@Operation(summary = "feed List 조회 API", description = "feed List로 조회하는 API 입니다.", tags = {"Feed"})
+	@Operation(summary = "feed List 조회 API(회원용)", description = "feed List로 조회하는 API 입니다.(회원용)", tags = {"Feed"})
+	@GetMapping("/MemberRandom")
+	public BaseResponse<Page<FeedReadResponseDto>> readFeedMemberRandomList(
+		@RequestHeader String uuid,
+		@RequestParam(defaultValue = "0") int page,
+		@RequestParam(defaultValue = "10") int size) {
+		Page<FeedReadResponseDto> feedRead = feedReadService.readFeedMemberRandomList(uuid, page, size);
+		return new BaseResponse<>(feedRead);
+	}
+
+	@Operation(summary = "feed List 조회 API(비회원용)", description = "feed List로 조회하는 API 입니다.(비회원용)", tags = {"Feed"})
 	@GetMapping("/random")
 	public BaseResponse<Page<FeedListResponseDto>> readFeedRandomList(
 		@RequestParam(defaultValue = "0") int page,

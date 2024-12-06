@@ -18,7 +18,7 @@ public class FeedReadDetailResponseVo {
 	private String tag;
 	private String nickname;
 	private String image;
-	private String petCode;
+	private List<String> petCode;
 	private String content;
 	private List<String> tagList;
 	private List<String> mediaUrlList;

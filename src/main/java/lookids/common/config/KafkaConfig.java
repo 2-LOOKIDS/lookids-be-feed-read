@@ -21,6 +21,7 @@ import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
+import lookids.feedread.dto.in.BlockKafkaDto;
 import lookids.feedread.dto.in.FeedDeleteKafkaDto;
 import lookids.feedread.dto.in.UuidRequestKafkaDto;
 import lookids.feedread.dto.out.FavoriteResponseDto;
@@ -73,6 +74,25 @@ public class KafkaConfig {
 	@Bean
 	public KafkaTemplate<String, UuidRequestKafkaDto> followKafkaTemplate() {
 		return new KafkaTemplate<>(FollowUuidNotification());
+	}
+
+	@Bean
+	public Map<String, Object> BlockUuidProducerConfigs() {
+		Map<String, Object> producerProps = new HashMap<>();
+		producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
+		producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+		producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+		return producerProps;
+	}
+
+	@Bean
+	public ProducerFactory<String, UuidRequestKafkaDto> BlockUuidNotification() {
+		return new DefaultKafkaProducerFactory<>(BlockUuidProducerConfigs());
+	}
+
+	@Bean
+	public KafkaTemplate<String, UuidRequestKafkaDto> blockKafkaTemplate() {
+		return new KafkaTemplate<>(BlockUuidNotification());
 	}
 
 	@Bean
@@ -208,6 +228,30 @@ public class KafkaConfig {
 	public ConcurrentKafkaListenerContainerFactory<String, FeedDeleteKafkaDto> deleteEventListenerContainerFactory() {
 		ConcurrentKafkaListenerContainerFactory<String, FeedDeleteKafkaDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
 		factory.setConsumerFactory(DeleteConsumerFactory());
+		return factory;
+	}
+	@Bean
+	public ConsumerFactory<String, BlockKafkaDto> BlockConsumerFactory() {
+		Map<String, Object> props = new HashMap<>();
+		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
+		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
+		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
+		props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+		props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "5000");
+		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "500");
+		props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, "300000");
+
+		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
+			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(BlockKafkaDto.class, false)));
+	}
+
+	@Bean
+	public ConcurrentKafkaListenerContainerFactory<String, BlockKafkaDto> blockEventListenerContainerFactory() {
+		ConcurrentKafkaListenerContainerFactory<String, BlockKafkaDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
+		factory.setConsumerFactory(BlockConsumerFactory());
 		return factory;
 	}
 }

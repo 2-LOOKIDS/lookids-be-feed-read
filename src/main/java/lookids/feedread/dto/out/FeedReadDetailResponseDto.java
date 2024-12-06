@@ -18,14 +18,14 @@ public class FeedReadDetailResponseDto {
 	private String nickname;
 	private String tag;
 	private String image;
-	private String petCode;
+	private List<String> petCode;
 	private String content;
 	private List<String> tagList;
 	private List<String> mediaUrlList;
 	private LocalDateTime createdAt;
 
 	@Builder
-	public FeedReadDetailResponseDto(String uuid, String nickname, String tag, String image, String petCode, String content,
+	public FeedReadDetailResponseDto(String uuid, String nickname, String tag, String image, List<String> petCode, String content,
 		List<String> tagList, List<String> mediaUrlList, LocalDateTime createdAt) {
 		this.uuid = uuid;
 		this.nickname = nickname;
