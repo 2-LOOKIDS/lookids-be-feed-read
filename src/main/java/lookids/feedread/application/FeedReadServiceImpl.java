@@ -27,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import lookids.common.entity.BaseResponseStatus;
 import lookids.common.exception.BaseException;
 import lookids.feedread.domain.FeedRead;
+import lookids.feedread.dto.in.BlockKafkaDto;
 import lookids.feedread.dto.in.FeedDeleteKafkaDto;
 import lookids.feedread.dto.in.FeedKafkaDto;
 import lookids.feedread.dto.in.UserImageKafkaDto;
@@ -50,8 +51,11 @@ public class FeedReadServiceImpl implements FeedReadService {
 	private final ConcurrentHashMap<String, CompletableFuture<UserKafkaDto>> userEventFutureMap = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, CompletableFuture<FavoriteResponseDto>> favoriteEventFutureMap = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, CompletableFuture<FollowResponseDto>> followEventFutureMap = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, CompletableFuture<BlockKafkaDto>> blockEventFutureMap = new ConcurrentHashMap<>();
 	private final KafkaTemplate<String, UuidRequestKafkaDto> favoriteKafkaTemplate;
 	private final KafkaTemplate<String, UuidRequestKafkaDto> followKafkaTemplate;
+	private final KafkaTemplate<String, UuidRequestKafkaDto> blockKafkaTemplate;
+
 	private final FeedReadRepository feedReadRepository;
 	private final MongoTemplate mongoTemplate;
 
@@ -188,6 +192,42 @@ public class FeedReadServiceImpl implements FeedReadService {
 		String uuid = followResponseDto.getUuid();
 		CompletableFuture<FollowResponseDto> futureUuidList = followEventFutureMap.get(uuid);
 		futureUuidList.complete(followResponseDto);
+	}
+
+	@Override
+	public Page<FeedReadResponseDto> readFeedMemberRandomList(String uuid, int page, int size) {
+		blockKafkaTemplate.send("block-request", UuidRequestKafkaDto.toDto(uuid));
+		log.info("consume: {} ", UuidRequestKafkaDto.toDto(uuid));
+		CompletableFuture<BlockKafkaDto> futureUuidList = new CompletableFuture<>();
+		blockEventFutureMap.put(uuid, futureUuidList);
+		List<String> BlockUuidList;
+		try {
+			BlockUuidList = futureUuidList.get().getBlockUuid();
+		} catch (InterruptedException | ExecutionException e) {
+			log.error("Error while fetching favorite feed codes", e);
+			BlockUuidList = Collections.emptyList();
+		}
+		Aggregation aggregation = Aggregation.newAggregation(
+			Aggregation.match(Criteria.where("uuid").nin(BlockUuidList).and("state").in(false)),
+			Aggregation.sample(size),
+			Aggregation.skip((long)page * size),
+			Aggregation.limit(size));
+
+		List<FeedRead> feedReadList = mongoTemplate.aggregate(aggregation, "feedRead", FeedRead.class).getMappedResults();
+		long total = mongoTemplate.count(Query.query(Criteria.where("state").is(false)), "feedRead");
+		Pageable pageable = PageRequest.of(page, size);
+		List<FeedReadResponseDto> feedRandomList = feedReadList
+			.stream().map(FeedReadResponseDto::toDto)
+			.toList();
+		return new PageImpl<>(feedRandomList, pageable, total);
+	}
+
+	@KafkaListener(topics = "block-response", groupId = "feed-read-group", containerFactory = "blockEventListenerContainerFactory")
+	public void readBlockUuid(BlockKafkaDto blockKafkaDto) {
+		String uuid = blockKafkaDto.getUuid();
+		CompletableFuture<BlockKafkaDto> futureUuidList = blockEventFutureMap.get(uuid);
+		futureUuidList.complete(blockKafkaDto);
+		log.info("consume: {} ", blockKafkaDto);
 	}
 
 	@Override

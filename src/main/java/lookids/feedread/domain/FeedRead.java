@@ -28,14 +28,14 @@ public class FeedRead {
 	private String image;
 	private String content;
 	private boolean state;
-	private String petCode;
+	private List<String> petCode;
 	private List<String> tagList;
 	private List<String> mediaUrlList;
 	private LocalDateTime createdAt;
 
 
 	@Builder
-	public FeedRead(ObjectId id, String feedCode, String uuid, String tag, String petCode, String content,
+	public FeedRead(ObjectId id, String feedCode, String uuid, String tag, List<String> petCode, String content,
 		List<String> tagList, boolean state, List<String> mediaUrlList, LocalDateTime createdAt, String nickname, String image) {
 		this.id = id;
 		this.feedCode = feedCode;

@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import lookids.feedread.domain.FeedRead;
 
 @Getter
 @NoArgsConstructor
@@ -16,7 +15,7 @@ public class FeedKafkaDto {
 
 	private String feedCode;
 	private String uuid;
-	private String petCode;
+	private List<String> petCode;
 	private String content;
 	private List<String> tagList;
 	private boolean state;
@@ -24,7 +23,7 @@ public class FeedKafkaDto {
 	private LocalDateTime createdAt;
 
 	@Builder
-	public FeedKafkaDto(String feedCode, String uuid, String petCode, String content,
+	public FeedKafkaDto(String feedCode, String uuid, List<String> petCode, String content,
 		List<String> tagList, boolean state, List<String> mediaUrlList, LocalDateTime createdAt) {
 		this.feedCode = feedCode;
 		this.uuid = uuid;
