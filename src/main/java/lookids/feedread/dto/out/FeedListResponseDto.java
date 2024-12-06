@@ -36,9 +36,18 @@ public class FeedListResponseDto {
 	}
 
 	public static FeedListResponseDto toDto(FeedRead feedRead) {
-		return null;
-	}
-
-	public void setImage(String petImage) {
+		return FeedListResponseDto.builder()
+			.uuid(feedRead.getUuid())
+			.nickname(feedRead.getNickname())
+			.tag(feedRead.getTag())
+			.image(feedRead.getImage())
+			.feedCode(feedRead.getFeedCode())
+			.content(feedRead.getContent())
+			.mediaUrlList(feedRead.getMediaUrlList())
+			.createdAt(feedRead.getCreatedAt()
+				.atZone(ZoneId.systemDefault())
+				.withZoneSameInstant(ZoneId.of("Asia/Seoul"))
+				.toLocalDateTime())
+			.build();
 	}
 }
