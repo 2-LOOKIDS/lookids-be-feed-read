@@ -161,6 +161,9 @@ public class FeedReadServiceImpl implements FeedReadService {
 		followKafkaTemplate.send("follow-request", UuidRequestKafkaDto.toDto(uuid));
 		CompletableFuture<FollowResponseDto> futureUuidList = new CompletableFuture<>();
 		followEventFutureMap.put(uuid, futureUuidList);
+		blockKafkaTemplate.send("block-request", UuidRequestKafkaDto.toDto(uuid));
+		CompletableFuture<BlockKafkaDto> futureBlockList = new CompletableFuture<>();
+		blockEventFutureMap.put(uuid, futureBlockList);
 		List<String> followUuid;
 		try {
 			followUuid = futureUuidList.get().getFollowUuid();
@@ -168,22 +171,35 @@ public class FeedReadServiceImpl implements FeedReadService {
 			log.error("Error while fetching follow list", e);
 			followUuid = Collections.emptyList();
 		}
-		Criteria criteria = Criteria.where("uuid").in(followUuid).and("state").is(false);
-		if (tag != null && !tag.isEmpty()) {
-			criteria.and("tagList").in(tag);
+
+		List<String> BlockUuidList;
+		try {
+			BlockUuidList = futureBlockList.get().getBlockUuid();
+		} catch (InterruptedException | ExecutionException e) {
+			log.error("Error while fetching block list", e);
+			BlockUuidList = Collections.emptyList();
 		}
+		Criteria followCriteria = Criteria.where("uuid").in(followUuid).and("state").is(false);
+		if (tag != null && !tag.isEmpty()) {
+			followCriteria = followCriteria.and("tagList").in(tag);
+		}
+		Criteria blockCriteria = new Criteria();
+		if (!BlockUuidList.isEmpty()) {
+			blockCriteria = Criteria.where("uuid").nin(BlockUuidList);
+		}
+		Criteria combinedCriteria = new Criteria().andOperator(followCriteria, blockCriteria);
 		Aggregation aggregation = Aggregation.newAggregation(
-			Aggregation.match(criteria),
+			Aggregation.match(combinedCriteria),
 			Aggregation.sort(Sort.by(Sort.Order.desc("createdAt"))),
 			Aggregation.skip((long) page * size),
-			Aggregation.limit(size));
+			Aggregation.limit(size)
+		);
 		List<FeedListResponseDto> feedDtoList = mongoTemplate.aggregate(aggregation, "feedRead", FeedRead.class).getMappedResults()
 			.stream()
 			.map(FeedListResponseDto::toDto)
 			.collect(Collectors.toList());
-		long total = mongoTemplate.count(Query.query(criteria), "feedRead");
+		long total = mongoTemplate.count(Query.query(combinedCriteria), "feedRead");
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
-
 		return new PageImpl<>(feedDtoList, pageable, total);
 	}
 
@@ -197,24 +213,33 @@ public class FeedReadServiceImpl implements FeedReadService {
 	@Override
 	public Page<FeedReadResponseDto> readFeedMemberRandomList(String uuid, int page, int size) {
 		blockKafkaTemplate.send("block-request", UuidRequestKafkaDto.toDto(uuid));
-		log.info("consume: {} ", UuidRequestKafkaDto.toDto(uuid));
-		CompletableFuture<BlockKafkaDto> futureUuidList = new CompletableFuture<>();
-		blockEventFutureMap.put(uuid, futureUuidList);
+		CompletableFuture<BlockKafkaDto> futureBlockList = new CompletableFuture<>();
+		blockEventFutureMap.put(uuid, futureBlockList);
 		List<String> BlockUuidList;
 		try {
-			BlockUuidList = futureUuidList.get().getBlockUuid();
+			BlockUuidList = futureBlockList.get().getBlockUuid();
 		} catch (InterruptedException | ExecutionException e) {
 			log.error("Error while fetching favorite feed codes", e);
 			BlockUuidList = Collections.emptyList();
 		}
-		Aggregation aggregation = Aggregation.newAggregation(
-			Aggregation.match(Criteria.where("uuid").nin(BlockUuidList).and("state").in(false)),
-			Aggregation.sample(size),
-			Aggregation.skip((long)page * size),
-			Aggregation.limit(size));
+		Aggregation aggregation;
+		if(BlockUuidList.isEmpty()) {
+			aggregation = Aggregation.newAggregation(
+				Aggregation.match(Criteria.where("state").in(false)),
+				Aggregation.sample(size),
+				Aggregation.skip((long)page * size),
+				Aggregation.limit(size));
+		}
+		else {
+			aggregation = Aggregation.newAggregation(
+				Aggregation.match(Criteria.where("uuid").nin(BlockUuidList).and("state").in(false)),
+				Aggregation.sample(size),
+				Aggregation.skip((long)page * size),
+				Aggregation.limit(size));
+		}
 
 		List<FeedRead> feedReadList = mongoTemplate.aggregate(aggregation, "feedRead", FeedRead.class).getMappedResults();
-		long total = mongoTemplate.count(Query.query(Criteria.where("state").is(false)), "feedRead");
+		long total = mongoTemplate.count(Query.query(Criteria.where("uuid").nin(BlockUuidList).and("state").is(false)), "feedRead");
 		Pageable pageable = PageRequest.of(page, size);
 		List<FeedReadResponseDto> feedRandomList = feedReadList
 			.stream().map(FeedReadResponseDto::toDto)
@@ -225,9 +250,8 @@ public class FeedReadServiceImpl implements FeedReadService {
 	@KafkaListener(topics = "block-response", groupId = "feed-read-group", containerFactory = "blockEventListenerContainerFactory")
 	public void readBlockUuid(BlockKafkaDto blockKafkaDto) {
 		String uuid = blockKafkaDto.getUuid();
-		CompletableFuture<BlockKafkaDto> futureUuidList = blockEventFutureMap.get(uuid);
-		futureUuidList.complete(blockKafkaDto);
-		log.info("consume: {} ", blockKafkaDto);
+		CompletableFuture<BlockKafkaDto> futureBlockList = blockEventFutureMap.get(uuid);
+		futureBlockList.complete(blockKafkaDto);
 	}
 
 	@Override
