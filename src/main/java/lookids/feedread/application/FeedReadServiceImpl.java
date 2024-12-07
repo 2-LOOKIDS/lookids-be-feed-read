@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import org.springframework.asm.TypeReference;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -21,6 +22,9 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.ser.std.StdKeySerializers;
+
+import ch.qos.logback.core.joran.conditional.ElseAction;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +34,8 @@ import lookids.feedread.domain.FeedRead;
 import lookids.feedread.dto.in.BlockKafkaDto;
 import lookids.feedread.dto.in.FeedDeleteKafkaDto;
 import lookids.feedread.dto.in.FeedKafkaDto;
+import lookids.feedread.dto.in.PetImageKafkaDto;
+import lookids.feedread.dto.in.PetKafkaDto;
 import lookids.feedread.dto.in.UserImageKafkaDto;
 import lookids.feedread.dto.in.UserKafkaDto;
 import lookids.feedread.dto.in.UserNickNameKafkaDto;
@@ -52,9 +58,11 @@ public class FeedReadServiceImpl implements FeedReadService {
 	private final ConcurrentHashMap<String, CompletableFuture<FavoriteResponseDto>> favoriteEventFutureMap = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, CompletableFuture<FollowResponseDto>> followEventFutureMap = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, CompletableFuture<BlockKafkaDto>> blockEventFutureMap = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, CompletableFuture<String>> petEventFutureMap = new ConcurrentHashMap<>();
 	private final KafkaTemplate<String, UuidRequestKafkaDto> favoriteKafkaTemplate;
 	private final KafkaTemplate<String, UuidRequestKafkaDto> followKafkaTemplate;
 	private final KafkaTemplate<String, UuidRequestKafkaDto> blockKafkaTemplate;
+	private final KafkaTemplate<String, PetKafkaDto> petKafkaTemplate;
 
 	private final FeedReadRepository feedReadRepository;
 	private final MongoTemplate mongoTemplate;
@@ -121,6 +129,37 @@ public class FeedReadServiceImpl implements FeedReadService {
 			.orElseThrow(() -> new BaseException(BaseResponseStatus.NO_EXIST_FEED));
 		FeedRead updatedFeedRead = feedDeleteKafkaDto.toUpdatedEntity(feedRead);
 		feedReadRepository.save(updatedFeedRead);
+	}
+
+	@KafkaListener(topics = "petprofile-response", groupId = "feed-read-group", containerFactory = "petEventListenerContainerFactory")
+	public void PetConsume(PetImageKafkaDto petImageKafkaDto) {
+		String petCode = petImageKafkaDto.getPetCode();
+		String petImage = petImageKafkaDto.getImage();
+		log.info("petConsume: {} ", petImageKafkaDto);
+		CompletableFuture<String> petImageFuture = petEventFutureMap.get(petCode);
+		if (petImageFuture != null) {
+			petImageFuture.complete(petImage);
+		} else {
+			log.warn("No future found for petCode: {}", petCode);
+		}
+	}
+
+	private String readPetProfile(String petCode, String userImage) {
+		if(petCode != null || !petCode.isEmpty()) {
+			PetKafkaDto petKafkaDto = new PetKafkaDto(petCode);
+			CompletableFuture<String> petImageFuture = new CompletableFuture<>();
+			petKafkaTemplate.send("petprofile-request", petKafkaDto);
+			log.info("petCodeProd: {}", petKafkaDto);
+			petEventFutureMap.put(petCode, petImageFuture);
+			try {
+				return petImageFuture.get();
+			} catch (InterruptedException | ExecutionException e) {
+				log.error("Error while fetching pet image", e);
+				return userImage;
+			}
+		} else  {
+			return userImage;
+		}
 	}
 
 	@Override
@@ -285,6 +324,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 	public FeedReadDetailResponseDto readFeedDetail(String feedCode) {
 		FeedRead feedRead = feedReadRepository.findByFeedCodeAndStateFalse(feedCode)
 			.orElseThrow(() -> new BaseException(BaseResponseStatus.NO_EXIST_FEED));
+
 		return FeedReadDetailResponseDto.toDto(feedRead);
 	}
 
