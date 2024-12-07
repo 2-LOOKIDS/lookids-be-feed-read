@@ -171,7 +171,6 @@ public class FeedReadServiceImpl implements FeedReadService {
 			log.error("Error while fetching follow list", e);
 			followUuid = Collections.emptyList();
 		}
-
 		List<String> BlockUuidList;
 		try {
 			BlockUuidList = futureBlockList.get().getBlockUuid();
@@ -186,6 +185,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 		Criteria blockCriteria = new Criteria();
 		if (!BlockUuidList.isEmpty()) {
 			blockCriteria = Criteria.where("uuid").nin(BlockUuidList);
+			log.info("consume: {}", BlockUuidList);
 		}
 		Criteria combinedCriteria = new Criteria().andOperator(followCriteria, blockCriteria);
 		Aggregation aggregation = Aggregation.newAggregation(
@@ -222,27 +222,23 @@ public class FeedReadServiceImpl implements FeedReadService {
 			log.error("Error while fetching favorite feed codes", e);
 			BlockUuidList = Collections.emptyList();
 		}
-		Aggregation aggregation;
-		if(BlockUuidList.isEmpty()) {
-			aggregation = Aggregation.newAggregation(
-				Aggregation.match(Criteria.where("state").in(false)),
-				Aggregation.sample(size),
-				Aggregation.skip((long)page * size),
-				Aggregation.limit(size));
-		}
-		else {
-			aggregation = Aggregation.newAggregation(
-				Aggregation.match(Criteria.where("uuid").nin(BlockUuidList).and("state").in(false)),
-				Aggregation.sample(size),
-				Aggregation.skip((long)page * size),
-				Aggregation.limit(size));
+		Criteria criteria = Criteria.where("state").is(false);
+		if (!BlockUuidList.isEmpty()) {
+			criteria = criteria.and("uuid").nin(BlockUuidList);
 		}
 
+		Aggregation aggregation = Aggregation.newAggregation(
+			Aggregation.match(criteria),
+			Aggregation.sample(size),
+			Aggregation.skip((long) page * size),
+			Aggregation.limit(size)
+		);
 		List<FeedRead> feedReadList = mongoTemplate.aggregate(aggregation, "feedRead", FeedRead.class).getMappedResults();
-		long total = mongoTemplate.count(Query.query(Criteria.where("uuid").nin(BlockUuidList).and("state").is(false)), "feedRead");
+		long total = mongoTemplate.count(Query.query(criteria), "feedRead");
 		Pageable pageable = PageRequest.of(page, size);
 		List<FeedReadResponseDto> feedRandomList = feedReadList
-			.stream().map(FeedReadResponseDto::toDto)
+			.stream()
+			.map(FeedReadResponseDto::toDto)
 			.toList();
 		return new PageImpl<>(feedRandomList, pageable, total);
 	}
