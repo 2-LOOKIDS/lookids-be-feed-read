@@ -58,7 +58,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 	private final ConcurrentHashMap<String, CompletableFuture<FavoriteResponseDto>> favoriteEventFutureMap = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, CompletableFuture<FollowResponseDto>> followEventFutureMap = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, CompletableFuture<BlockKafkaDto>> blockEventFutureMap = new ConcurrentHashMap<>();
-	private final ConcurrentHashMap<String, CompletableFuture<String>> petEventFutureMap = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, CompletableFuture<PetImageKafkaDto>> petEventFutureMap = new ConcurrentHashMap<>();
 	private final KafkaTemplate<String, UuidRequestKafkaDto> favoriteKafkaTemplate;
 	private final KafkaTemplate<String, UuidRequestKafkaDto> followKafkaTemplate;
 	private final KafkaTemplate<String, UuidRequestKafkaDto> blockKafkaTemplate;
@@ -131,34 +131,33 @@ public class FeedReadServiceImpl implements FeedReadService {
 		feedReadRepository.save(updatedFeedRead);
 	}
 
-	@KafkaListener(topics = "petprofile-response", groupId = "feed-read-group", containerFactory = "petEventListenerContainerFactory")
-	public void PetConsume(PetImageKafkaDto petImageKafkaDto) {
-		String petCode = petImageKafkaDto.getPetCode();
-		String petImage = petImageKafkaDto.getImage();
-		log.info("petConsume: {} ", petImageKafkaDto);
-		CompletableFuture<String> petImageFuture = petEventFutureMap.get(petCode);
-		if (petImageFuture != null) {
-			petImageFuture.complete(petImage);
-		} else {
-			log.warn("No future found for petCode: {}", petCode);
-		}
+	@KafkaListener(topics = "favorite-response", groupId = "feed-read-group", containerFactory = "favoriteEventListenerContainerFactory")
+	public void readFeedFavorite(FavoriteResponseDto favoriteResponseDto) {
+		String uuid = favoriteResponseDto.getUuid();
+		CompletableFuture<FavoriteResponseDto> futureFeedCodeList = favoriteEventFutureMap.get(uuid);
+		futureFeedCodeList.complete(favoriteResponseDto);
 	}
 
-	private String readPetProfile(String petCode, String userImage) {
-		if(petCode != null || !petCode.isEmpty()) {
-			PetKafkaDto petKafkaDto = new PetKafkaDto(petCode);
-			CompletableFuture<String> petImageFuture = new CompletableFuture<>();
-			petKafkaTemplate.send("petprofile-request", petKafkaDto);
-			log.info("petCodeProd: {}", petKafkaDto);
-			petEventFutureMap.put(petCode, petImageFuture);
-			try {
-				return petImageFuture.get();
-			} catch (InterruptedException | ExecutionException e) {
-				log.error("Error while fetching pet image", e);
-				return userImage;
-			}
-		} else  {
-			return userImage;
+	@KafkaListener(topics = "block-response", groupId = "feed-read-group", containerFactory = "blockEventListenerContainerFactory")
+	public void readBlockUuid(BlockKafkaDto blockKafkaDto) {
+		String uuid = blockKafkaDto.getUuid();
+		CompletableFuture<BlockKafkaDto> futureBlockList = blockEventFutureMap.get(uuid);
+		futureBlockList.complete(blockKafkaDto);
+	}
+
+	@KafkaListener(topics = "follow-response", groupId = "feed-read-group", containerFactory = "followEventListenerContainerFactory")
+	public void readFeedFollow(FollowResponseDto followResponseDto) {
+		String uuid = followResponseDto.getUuid();
+		CompletableFuture<FollowResponseDto> futureUuidList = followEventFutureMap.get(uuid);
+		futureUuidList.complete(followResponseDto);
+	}
+
+	@KafkaListener(topics = "petprofile-response", groupId = "feed-read-group", containerFactory = "petEventListenerContainerFactory")
+	public void readPetImage(PetImageKafkaDto petImageKafkaDto) {
+		String petCode = petImageKafkaDto.getPetCode();
+		CompletableFuture<PetImageKafkaDto> futurePetImage = petEventFutureMap.get(petCode);
+		if (futurePetImage != null) {
+			futurePetImage.complete(petImageKafkaDto);
 		}
 	}
 
@@ -176,23 +175,16 @@ public class FeedReadServiceImpl implements FeedReadService {
 		}
 		Criteria criteria = Criteria.where("feedCode").in(targetCodeList).and("state").is(false);
 		Query query = new Query(criteria)
-			.with(Sort.by(Sort.Order.desc("createdAt")))
-			.skip((long) page * size)
-			.limit(size);
+				.with(Sort.by(Sort.Order.desc("createdAt")))
+				.skip((long) page * size)
+				.limit(size);
 		List<FeedReadResponseDto> feedDtoList = mongoTemplate.find(query, FeedRead.class).stream()
-			.map(FeedReadResponseDto::toDto)
-			.collect(Collectors.toList());
+				.map(FeedReadResponseDto::toDto)
+				.collect(Collectors.toList());
 		long total = mongoTemplate.count(Query.query(criteria), "feedRead");
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
 
 		return new PageImpl<>(feedDtoList, pageable, total);
-	}
-
-	@KafkaListener(topics = "favorite-response", groupId = "feed-read-group", containerFactory = "favoriteEventListenerContainerFactory")
-	public void readFeedFavorite(FavoriteResponseDto favoriteResponseDto) {
-		String uuid = favoriteResponseDto.getUuid();
-		CompletableFuture<FavoriteResponseDto> futureFeedCodeList = favoriteEventFutureMap.get(uuid);
-		futureFeedCodeList.complete(favoriteResponseDto);
 	}
 
 	@Override
@@ -235,18 +227,14 @@ public class FeedReadServiceImpl implements FeedReadService {
 		);
 		List<FeedListResponseDto> feedDtoList = mongoTemplate.aggregate(aggregation, "feedRead", FeedRead.class).getMappedResults()
 			.stream()
-			.map(FeedListResponseDto::toDto)
-			.collect(Collectors.toList());
+			.map(feedRead -> {
+				String image = readImageByPetCode(feedRead);
+				return FeedListResponseDto.toDto(feedRead, image);
+			})
+				.collect(Collectors.toList());
 		long total = mongoTemplate.count(Query.query(combinedCriteria), "feedRead");
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
 		return new PageImpl<>(feedDtoList, pageable, total);
-	}
-
-	@KafkaListener(topics = "follow-response", groupId = "feed-read-group", containerFactory = "followEventListenerContainerFactory")
-	public void readFeedFollow(FollowResponseDto followResponseDto) {
-		String uuid = followResponseDto.getUuid();
-		CompletableFuture<FollowResponseDto> futureUuidList = followEventFutureMap.get(uuid);
-		futureUuidList.complete(followResponseDto);
 	}
 
 	@Override
@@ -282,13 +270,6 @@ public class FeedReadServiceImpl implements FeedReadService {
 		return new PageImpl<>(feedRandomList, pageable, total);
 	}
 
-	@KafkaListener(topics = "block-response", groupId = "feed-read-group", containerFactory = "blockEventListenerContainerFactory")
-	public void readBlockUuid(BlockKafkaDto blockKafkaDto) {
-		String uuid = blockKafkaDto.getUuid();
-		CompletableFuture<BlockKafkaDto> futureBlockList = blockEventFutureMap.get(uuid);
-		futureBlockList.complete(blockKafkaDto);
-	}
-
 	@Override
 	public Page<FeedListResponseDto> readFeedRandomList(int page, int size) {
 		Aggregation aggregation = Aggregation.newAggregation(
@@ -297,11 +278,14 @@ public class FeedReadServiceImpl implements FeedReadService {
 			Aggregation.skip((long) page * size),
 			Aggregation.limit(size));
 		List<FeedRead> feedReadList = mongoTemplate.aggregate(aggregation, "feedRead", FeedRead.class).getMappedResults();
+		List<FeedListResponseDto> feedRandomList = feedReadList
+			.stream().map(feedRead -> {
+				String image = readImageByPetCode(feedRead);
+				return FeedListResponseDto.toDto(feedRead, image);
+				})
+			.collect(Collectors.toList());
 		long total = mongoTemplate.count(Query.query(Criteria.where("state").is(false)), "feedRead");
 		Pageable pageable = PageRequest.of(page, size);
-		List<FeedListResponseDto> feedRandomList = feedReadList
-			.stream().map(FeedListResponseDto::toDto)
-			.toList();
 		return new PageImpl<>(feedRandomList, pageable, total);
 	}
 
@@ -324,12 +308,33 @@ public class FeedReadServiceImpl implements FeedReadService {
 	public FeedReadDetailResponseDto readFeedDetail(String feedCode) {
 		FeedRead feedRead = feedReadRepository.findByFeedCodeAndStateFalse(feedCode)
 			.orElseThrow(() -> new BaseException(BaseResponseStatus.NO_EXIST_FEED));
-
-		return FeedReadDetailResponseDto.toDto(feedRead);
+		String image = readImageByPetCode(feedRead);
+		return FeedReadDetailResponseDto.toDto(feedRead, image);
 	}
 
 	@Override
 	public Boolean readFeedCheck(String uuid, String feedCode) {
 		return feedReadRepository.existsByUuidAndFeedCode(uuid, feedCode);
+	}
+
+	private String readImageByPetCode(FeedRead feedRead) {
+		if (feedRead == null || feedRead.getPetCode() == null || feedRead.getPetCode().isEmpty()) {
+			return null;
+		}
+		String petCode = feedRead.getPetCode().get(0);
+
+		CompletableFuture<PetImageKafkaDto> futurePetImage = new CompletableFuture<>();
+		petEventFutureMap.put(petCode, futurePetImage);
+
+		PetKafkaDto petKafkaDto = PetKafkaDto.toDto(feedRead);
+		petKafkaTemplate.send("petprofile-request", petKafkaDto);
+
+		try {
+			PetImageKafkaDto petImageDto = futurePetImage.get();
+			return petImageDto.getImage();
+		} catch (InterruptedException | ExecutionException e) {
+			log.error("Error fetching pet image for petCode {}", petCode, e);
+			return null;
+		}
 	}
 }
