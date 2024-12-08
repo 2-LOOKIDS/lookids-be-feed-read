@@ -20,8 +20,8 @@ public class PetKafkaDto {
 
 	public static PetKafkaDto toDto(FeedRead feedRead) {
 		return PetKafkaDto.builder()
-			.petCode(feedRead.getPetCode() != null && !feedRead.getPetCode().isEmpty()
-				?feedRead.getPetCode().get(0) : null)
-			.build();
+				.petCode(feedRead.getPetCode() != null && !feedRead.getPetCode().isEmpty()
+						? feedRead.getPetCode().get(0) : null)
+				.build();
 	}
 }
