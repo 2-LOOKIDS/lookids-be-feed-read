@@ -314,4 +314,23 @@ public class KafkaConfig {
 		factory.setConsumerFactory(petImageConsumerFactory());
 		return factory;
 	}
+
+	@Bean
+	public ConsumerFactory<String, UuidRequestKafkaDto> accounedeleteConsumerFactory() {
+		Map<String, Object> props = new HashMap<>();
+		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
+		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
+		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
+		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
+			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(UuidRequestKafkaDto.class, false)));
+	}
+
+	@Bean
+	public ConcurrentKafkaListenerContainerFactory<String, UuidRequestKafkaDto> accountDeleteEventListenerContainerFactory() {
+		ConcurrentKafkaListenerContainerFactory<String, UuidRequestKafkaDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
+		factory.setConsumerFactory(accounedeleteConsumerFactory());
+		return factory;
+	}
 }

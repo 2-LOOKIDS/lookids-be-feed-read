@@ -345,4 +345,15 @@ public class FeedReadServiceImpl implements FeedReadService {
 			.collect(Collectors.toList());
 		feedReadRepository.saveAll(ImageUpdate);
 	}
+
+	@KafkaListener(topics = "account-delete", groupId = "feed-read-group", containerFactory = "accountDeleteEventListenerContainerFactory")
+	public void ImageUpdateConsume(UuidRequestKafkaDto uuidRequestKafkaDto) {
+		List<FeedRead> findUuid = feedReadRepository.findAllByUuid(uuidRequestKafkaDto.getUuid());
+		if (findUuid.isEmpty()) {
+			throw new BaseException(BaseResponseStatus.NO_EXIST_FEED);
+		}
+		List<FeedRead> feedDelete = findUuid.stream().map(uuidRequestKafkaDto::toDelete)
+			.collect(Collectors.toList());
+		feedReadRepository.saveAll(feedDelete);
+	}
 }
