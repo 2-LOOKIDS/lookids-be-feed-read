@@ -1,5 +1,7 @@
 package lookids.feedread.dto.in;
 
+import java.time.LocalDateTime;
+
 import org.apache.kafka.common.errors.FencedLeaderEpochException;
 import org.bson.types.ObjectId;
 
@@ -15,10 +17,14 @@ import lookids.feedread.domain.FeedRead;
 public class FeedDeleteKafkaDto {
 
 	private String feedCode;
+	private String uuid;
+	private LocalDateTime createdAt;
 
 	@Builder
-	public FeedDeleteKafkaDto(String feedCode) {
+	public FeedDeleteKafkaDto(String feedCode, String uuid, LocalDateTime createdAt) {
 		this.feedCode = feedCode;
+		this.uuid = uuid;
+		this.createdAt = createdAt;
 	}
 
 	public FeedRead toUpdatedEntity(FeedRead feedRead) {

@@ -318,7 +318,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 	}
 
 	private String readImageByPetCode(FeedRead feedRead) {
-		if (feedRead == null || feedRead.getPetCode() == null || feedRead.getPetCode().isEmpty()) {
+		if (feedRead.getPetCode() == null || feedRead.getPetCode().isEmpty()) {
 			return null;
 		}
 		String petCode = feedRead.getPetCode().get(0);
@@ -336,5 +336,17 @@ public class FeedReadServiceImpl implements FeedReadService {
 			log.error("Error fetching pet image for petCode {}", petCode, e);
 			return null;
 		}
+	}
+
+	@Transactional
+	@KafkaListener(topics = "petprofile-image-update", groupId = "feed-read-group", containerFactory = "petProfileEventListenerContainerFactory")
+	public void ImageUpdateConsume(PetImageKafkaDto petImageKafkaDto) {
+		List<FeedRead> findPetCode = feedReadRepository.findAllBypetCode(petImageKafkaDto.getPetCode());
+		if (findPetCode.isEmpty()) {
+			throw new BaseException(BaseResponseStatus.NO_EXIST_FEED);
+		}
+		List<FeedRead> ImageUpdate = findPetCode.stream().map(petImageKafkaDto::toImageUpdate)
+			.collect(Collectors.toList());
+		feedReadRepository.saveAll(ImageUpdate);
 	}
 }
