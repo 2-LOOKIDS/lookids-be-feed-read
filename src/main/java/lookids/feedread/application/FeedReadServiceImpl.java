@@ -32,9 +32,11 @@ import lookids.feedread.dto.in.FeedDeleteKafkaDto;
 import lookids.feedread.dto.in.FeedKafkaDto;
 import lookids.feedread.dto.in.PetImageKafkaDto;
 import lookids.feedread.dto.in.PetKafkaDto;
+import lookids.feedread.dto.in.TargetKafkaDto;
 import lookids.feedread.dto.in.UserImageKafkaDto;
 import lookids.feedread.dto.in.UserKafkaDto;
 import lookids.feedread.dto.in.UserNickNameKafkaDto;
+import lookids.feedread.dto.in.UuidListKafkaDto;
 import lookids.feedread.dto.in.UuidRequestKafkaDto;
 import lookids.feedread.dto.out.FavoriteResponseDto;
 import lookids.feedread.dto.out.FeedListResponseDto;
@@ -59,6 +61,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 	private final KafkaTemplate<String, UuidRequestKafkaDto> followKafkaTemplate;
 	private final KafkaTemplate<String, UuidRequestKafkaDto> blockKafkaTemplate;
 	private final KafkaTemplate<String, PetKafkaDto> petKafkaTemplate;
+	private final KafkaTemplate<String, UuidListKafkaDto> uuidKafkaTemplate;
 
 	private final FeedReadRepository feedReadRepository;
 	private final MongoTemplate mongoTemplate;
@@ -155,6 +158,11 @@ public class FeedReadServiceImpl implements FeedReadService {
 		if (futurePetImage != null) {
 			futurePetImage.complete(petImageKafkaDto);
 		}
+	}
+
+	@KafkaListener(topics = "recommend-user", groupId = "feed-read-group", containerFactory = "recommendEventListenerContainerFactory")
+	public void recommendTarget(TargetKafkaDto targetKafkaDto) {
+		log.info("recommend: {}", targetKafkaDto);
 	}
 
 	@Override

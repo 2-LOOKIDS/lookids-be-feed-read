@@ -25,6 +25,7 @@ import lookids.feedread.dto.in.BlockKafkaDto;
 import lookids.feedread.dto.in.FeedDeleteKafkaDto;
 import lookids.feedread.dto.in.PetImageKafkaDto;
 import lookids.feedread.dto.in.PetKafkaDto;
+import lookids.feedread.dto.in.TargetKafkaDto;
 import lookids.feedread.dto.in.UuidRequestKafkaDto;
 import lookids.feedread.dto.out.FavoriteResponseDto;
 import lookids.feedread.dto.in.FeedKafkaDto;
@@ -331,6 +332,25 @@ public class KafkaConfig {
 	public ConcurrentKafkaListenerContainerFactory<String, UuidRequestKafkaDto> accountDeleteEventListenerContainerFactory() {
 		ConcurrentKafkaListenerContainerFactory<String, UuidRequestKafkaDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
 		factory.setConsumerFactory(accounedeleteConsumerFactory());
+		return factory;
+	}
+
+	@Bean
+	public ConsumerFactory<String, TargetKafkaDto> recommendConsumerFactory() {
+		Map<String, Object> props = new HashMap<>();
+		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
+		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
+		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
+		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
+			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(TargetKafkaDto.class, false)));
+	}
+
+	@Bean
+	public ConcurrentKafkaListenerContainerFactory<String, TargetKafkaDto> recommendEventListenerContainerFactory() {
+		ConcurrentKafkaListenerContainerFactory<String, TargetKafkaDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
+		factory.setConsumerFactory(recommendConsumerFactory());
 		return factory;
 	}
 }
