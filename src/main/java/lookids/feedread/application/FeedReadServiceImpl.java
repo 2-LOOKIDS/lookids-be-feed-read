@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-import org.springframework.asm.TypeReference;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -22,9 +21,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.databind.ser.std.StdKeySerializers;
-
-import ch.qos.logback.core.joran.conditional.ElseAction;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -125,7 +121,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 
 	@KafkaListener(topics = "feed-delete", groupId = "feed-read-group", containerFactory = "deleteEventListenerContainerFactory")
 	public void FeedDeleteConsume(FeedDeleteKafkaDto feedDeleteKafkaDto) {
-		FeedRead feedRead = feedReadRepository.findByFeedCodeAndStateFalse(feedDeleteKafkaDto.getFeedCode())
+		FeedRead feedRead = feedReadRepository.findByFeedCodeAndStateTrue(feedDeleteKafkaDto.getFeedCode())
 			.orElseThrow(() -> new BaseException(BaseResponseStatus.NO_EXIST_FEED));
 		FeedRead updatedFeedRead = feedDeleteKafkaDto.toUpdatedEntity(feedRead);
 		feedReadRepository.save(updatedFeedRead);
@@ -306,7 +302,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 
 	@Override
 	public FeedReadDetailResponseDto readFeedDetail(String feedCode) {
-		FeedRead feedRead = feedReadRepository.findByFeedCodeAndStateFalse(feedCode)
+		FeedRead feedRead = feedReadRepository.findByFeedCodeAndStateTrue(feedCode)
 			.orElseThrow(() -> new BaseException(BaseResponseStatus.NO_EXIST_FEED));
 		String image = readImageByPetCode(feedRead);
 		return FeedReadDetailResponseDto.toDto(feedRead, image);
