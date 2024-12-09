@@ -169,7 +169,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 			log.error("Error while fetching favorite feed codes", e);
 			targetCodeList = Collections.emptyList();
 		}
-		Criteria criteria = Criteria.where("feedCode").in(targetCodeList).and("state").is(false);
+		Criteria criteria = Criteria.where("feedCode").in(targetCodeList).and("state").is(true);
 		Query query = new Query(criteria)
 				.with(Sort.by(Sort.Order.desc("createdAt")))
 				.skip((long) page * size)
@@ -205,7 +205,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 			log.error("Error while fetching block list", e);
 			BlockUuidList = Collections.emptyList();
 		}
-		Criteria followCriteria = Criteria.where("uuid").in(followUuid).and("state").is(false);
+		Criteria followCriteria = Criteria.where("uuid").in(followUuid).and("state").is(true);
 		if (tag != null && !tag.isEmpty()) {
 			followCriteria = followCriteria.and("tagList").in(tag);
 		}
@@ -245,7 +245,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 			log.error("Error while fetching favorite feed codes", e);
 			BlockUuidList = Collections.emptyList();
 		}
-		Criteria criteria = Criteria.where("state").is(false);
+		Criteria criteria = Criteria.where("state").is(true);
 		if (!BlockUuidList.isEmpty()) {
 			criteria = criteria.and("uuid").nin(BlockUuidList);
 		}
@@ -269,7 +269,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 	@Override
 	public Page<FeedListResponseDto> readFeedRandomList(int page, int size) {
 		Aggregation aggregation = Aggregation.newAggregation(
-			Aggregation.match(Criteria.where("state").is(false)),
+			Aggregation.match(Criteria.where("state").is(true)),
 			Aggregation.sample(size),
 			Aggregation.skip((long) page * size),
 			Aggregation.limit(size));
@@ -280,14 +280,14 @@ public class FeedReadServiceImpl implements FeedReadService {
 				return FeedListResponseDto.toDto(feedRead, image);
 				})
 			.collect(Collectors.toList());
-		long total = mongoTemplate.count(Query.query(Criteria.where("state").is(false)), "feedRead");
+		long total = mongoTemplate.count(Query.query(Criteria.where("state").is(true)), "feedRead");
 		Pageable pageable = PageRequest.of(page, size);
 		return new PageImpl<>(feedRandomList, pageable, total);
 	}
 
 	@Override
 	public Page<FeedReadResponseDto> readFeedThumbnailList(String uuid, int page, int size) {
-		Criteria criteria = Criteria.where("state").is(false).and("uuid").is(uuid);
+		Criteria criteria = Criteria.where("state").is(true).and("uuid").is(uuid);
 		Query query = new Query(criteria)
 				.with(Sort.by(Sort.Order.desc("createdAt")))
 				.skip((long) page * size)
