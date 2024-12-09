@@ -12,5 +12,6 @@ public interface FeedReadRepository extends MongoRepository<FeedRead, String> {
 	Optional<FeedRead> findByFeedCodeAndStateTrue(String feedCode);
 	Boolean existsByUuidAndFeedCode(String uuid, String feedCode);
 	List<FeedRead> findAllBypetCode(String petCode);
+	List<FeedRead> findByAllFeedCode(String targetCode);
 
 }
