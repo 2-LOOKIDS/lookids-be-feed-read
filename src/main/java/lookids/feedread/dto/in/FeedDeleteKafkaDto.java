@@ -40,7 +40,7 @@ public class FeedDeleteKafkaDto {
 			.petCode(feedRead.getPetCode())
 			.mediaUrlList(feedRead.getMediaUrlList())
 			.createdAt(feedRead.getCreatedAt())
-			.state(true)
+			.state(false)
 			.build();
 	}
 }

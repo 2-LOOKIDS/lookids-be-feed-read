@@ -23,4 +23,21 @@ public class UuidRequestKafkaDto {
 			.uuid(uuid)
 			.build();
 	}
+
+	public FeedRead toDelete(FeedRead feedRead) {
+		return FeedRead.builder()
+			.id(feedRead.getId())
+			.feedCode(feedRead.getFeedCode())
+			.uuid(feedRead.getUuid())
+			.nickname(feedRead.getNickname())
+			.image(feedRead.getImage())
+			.tag(feedRead.getTag())
+			.content(feedRead.getContent())
+			.tagList(feedRead.getTagList())
+			.petCode(feedRead.getPetCode())
+			.mediaUrlList(feedRead.getMediaUrlList())
+			.createdAt(feedRead.getCreatedAt())
+			.state(false)
+			.build();
+	}
 }
