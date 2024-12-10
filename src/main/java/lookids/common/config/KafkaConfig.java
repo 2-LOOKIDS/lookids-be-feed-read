@@ -42,8 +42,9 @@ public class KafkaConfig {
 	@Value("${spring.kafka.bootstrap-servers}")
 	private String bootstrapServer;
 
+	//producer
 	@Bean
-	public Map<String, Object> FavoriteUuidProducerConfigs() {
+	public Map<String, Object> ProducerConfigs() {
 		Map<String, Object> producerProps = new HashMap<>();
 		producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
 		producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -53,7 +54,7 @@ public class KafkaConfig {
 
 	@Bean
 	public ProducerFactory<String, UuidRequestKafkaDto> FavoriteUuidNotification() {
-		return new DefaultKafkaProducerFactory<>(FavoriteUuidProducerConfigs());
+		return new DefaultKafkaProducerFactory<>(ProducerConfigs());
 	}
 
 	@Bean
@@ -62,17 +63,8 @@ public class KafkaConfig {
 	}
 
 	@Bean
-	public Map<String, Object> FollowUuidProducerConfigs() {
-		Map<String, Object> producerProps = new HashMap<>();
-		producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-		producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-		producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-		return producerProps;
-	}
-
-	@Bean
 	public ProducerFactory<String, UuidRequestKafkaDto> FollowUuidNotification() {
-		return new DefaultKafkaProducerFactory<>(FollowUuidProducerConfigs());
+		return new DefaultKafkaProducerFactory<>(ProducerConfigs());
 	}
 
 	@Bean
@@ -81,17 +73,8 @@ public class KafkaConfig {
 	}
 
 	@Bean
-	public Map<String, Object> BlockUuidProducerConfigs() {
-		Map<String, Object> producerProps = new HashMap<>();
-		producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-		producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-		producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-		return producerProps;
-	}
-
-	@Bean
 	public ProducerFactory<String, UuidRequestKafkaDto> BlockUuidNotification() {
-		return new DefaultKafkaProducerFactory<>(BlockUuidProducerConfigs());
+		return new DefaultKafkaProducerFactory<>(ProducerConfigs());
 	}
 
 	@Bean
@@ -100,17 +83,8 @@ public class KafkaConfig {
 	}
 
 	@Bean
-	public Map<String, Object> petProfileProducerConfigs() {
-		Map<String, Object> producerProps = new HashMap<>();
-		producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-		producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-		producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-		return producerProps;
-	}
-
-	@Bean
 	public ProducerFactory<String, PetKafkaDto> petProfileNotification() {
-		return new DefaultKafkaProducerFactory<>(petProfileProducerConfigs());
+		return new DefaultKafkaProducerFactory<>(ProducerConfigs());
 	}
 
 	@Bean
@@ -119,17 +93,8 @@ public class KafkaConfig {
 	}
 
 	@Bean
-	public Map<String, Object> recommendProducerConfigs() {
-		Map<String, Object> producerProps = new HashMap<>();
-		producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-		producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-		producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-		return producerProps;
-	}
-
-	@Bean
 	public ProducerFactory<String, TargetRequestDto> recommendNotification() {
-		return new DefaultKafkaProducerFactory<>(recommendProducerConfigs());
+		return new DefaultKafkaProducerFactory<>(ProducerConfigs());
 	}
 
 	@Bean
@@ -137,11 +102,11 @@ public class KafkaConfig {
 		return new KafkaTemplate<>(recommendNotification());
 	}
 
-	@Bean
-	public ConsumerFactory<String, FeedKafkaDto> feedConsumerFactory() {
+	//consumer
+	private Map<String, Object> commonConsumerProps(String groupId) {
 		Map<String, Object> props = new HashMap<>();
 		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
+		props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
 		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
 		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
 		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
@@ -150,226 +115,138 @@ public class KafkaConfig {
 		props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "5000");
 		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "500");
 		props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, "300000");
+		return props;
+	}
 
-		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(FeedKafkaDto.class, false)));
+	private <T> ConsumerFactory<String, T> createConsumerFactory(Class<T> targetType, String groupId) {
+		return new DefaultKafkaConsumerFactory<>(commonConsumerProps(groupId), new StringDeserializer(),
+			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(targetType, false)));
+	}
+
+	private <T> ConcurrentKafkaListenerContainerFactory<String, T> createListenerContainerFactory(
+		ConsumerFactory<String, T> consumerFactory) {
+		ConcurrentKafkaListenerContainerFactory<String, T> factory = new ConcurrentKafkaListenerContainerFactory<>();
+		factory.setConsumerFactory(consumerFactory);
+		return factory;
+	}
+
+	@Bean
+	public ConsumerFactory<String, FeedKafkaDto> feedConsumerFactory() {
+		return createConsumerFactory(FeedKafkaDto.class, "feed-read-group");
 	}
 
 	@Bean
 	public ConcurrentKafkaListenerContainerFactory<String, FeedKafkaDto> feedEventListenerContainerFactory() {
-		ConcurrentKafkaListenerContainerFactory<String, FeedKafkaDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		factory.setConsumerFactory(feedConsumerFactory());
-		return factory;
+		return createListenerContainerFactory(feedConsumerFactory());
 	}
 
 	@Bean
 	public ConsumerFactory<String, UserKafkaDto> userProfileConsumerFactory() {
-		Map<String, Object> props = new HashMap<>();
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(UserKafkaDto.class, false)));
+		return createConsumerFactory(UserKafkaDto.class, "feed-read-group");
 	}
+
 	@Bean
 	public ConcurrentKafkaListenerContainerFactory<String, UserKafkaDto> userProfileEventListenerContainerFactory() {
-		ConcurrentKafkaListenerContainerFactory<String, UserKafkaDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		factory.setConsumerFactory(userProfileConsumerFactory());
-		return factory;
+		return createListenerContainerFactory(userProfileConsumerFactory());
 	}
 
 	@Bean
 	public ConsumerFactory<String, UserNickNameKafkaDto> userNickNameConsumerFactory() {
-		Map<String, Object> props = new HashMap<>();
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(UserNickNameKafkaDto.class, false)));
+		return createConsumerFactory(UserNickNameKafkaDto.class, "feed-read-group");
 	}
+
 	@Bean
 	public ConcurrentKafkaListenerContainerFactory<String, UserNickNameKafkaDto> userNickNameEventListenerContainerFactory() {
-		ConcurrentKafkaListenerContainerFactory<String, UserNickNameKafkaDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		factory.setConsumerFactory(userNickNameConsumerFactory());
-		return factory;
+		return createListenerContainerFactory(userNickNameConsumerFactory());
 	}
 
 	@Bean
 	public ConsumerFactory<String, UserImageKafkaDto> userImageConsumerFactory() {
-		Map<String, Object> props = new HashMap<>();
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(UserImageKafkaDto.class, false)));
+		return createConsumerFactory(UserImageKafkaDto.class, "feed-read-group");
 	}
+
 	@Bean
 	public ConcurrentKafkaListenerContainerFactory<String, UserImageKafkaDto> userImageEventListenerContainerFactory() {
-		ConcurrentKafkaListenerContainerFactory<String, UserImageKafkaDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		factory.setConsumerFactory(userImageConsumerFactory());
-		return factory;
+		return createListenerContainerFactory(userImageConsumerFactory());
 	}
 
 	@Bean
 	public ConsumerFactory<String, FavoriteResponseDto> favoriteConsumerFactory() {
-		Map<String, Object> props = new HashMap<>();
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(FavoriteResponseDto.class, false)));
+		return createConsumerFactory(FavoriteResponseDto.class, "feed-read-group");
 	}
 
 	@Bean
 	public ConcurrentKafkaListenerContainerFactory<String, FavoriteResponseDto> favoriteEventListenerContainerFactory() {
-		ConcurrentKafkaListenerContainerFactory<String, FavoriteResponseDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		factory.setConsumerFactory(favoriteConsumerFactory());
-		return factory;
+		return createListenerContainerFactory(favoriteConsumerFactory());
 	}
 
 	@Bean
 	public ConsumerFactory<String, FollowResponseDto> followConsumerFactory() {
-		Map<String, Object> props = new HashMap<>();
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(FollowResponseDto.class, false)));
+		return createConsumerFactory(FollowResponseDto.class, "feed-read-group");
 	}
 
 	@Bean
 	public ConcurrentKafkaListenerContainerFactory<String, FollowResponseDto> followEventListenerContainerFactory() {
-		ConcurrentKafkaListenerContainerFactory<String, FollowResponseDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		factory.setConsumerFactory(followConsumerFactory());
-		return factory;
+		return createListenerContainerFactory(followConsumerFactory());
 	}
 
 	@Bean
 	public ConsumerFactory<String, FeedDeleteKafkaDto> DeleteConsumerFactory() {
-		Map<String, Object> props = new HashMap<>();
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(FeedDeleteKafkaDto.class, false)));
+		return createConsumerFactory(FeedDeleteKafkaDto.class, "feed-read-group");
 	}
 
 	@Bean
 	public ConcurrentKafkaListenerContainerFactory<String, FeedDeleteKafkaDto> deleteEventListenerContainerFactory() {
-		ConcurrentKafkaListenerContainerFactory<String, FeedDeleteKafkaDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		factory.setConsumerFactory(DeleteConsumerFactory());
-		return factory;
+		return createListenerContainerFactory(DeleteConsumerFactory());
 	}
+
 	@Bean
 	public ConsumerFactory<String, BlockKafkaDto> BlockConsumerFactory() {
-		Map<String, Object> props = new HashMap<>();
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-		props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-		props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "5000");
-		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "500");
-		props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, "300000");
-
-		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(BlockKafkaDto.class, false)));
+		return createConsumerFactory(BlockKafkaDto.class, "feed-read-group");
 	}
 
 	@Bean
 	public ConcurrentKafkaListenerContainerFactory<String, BlockKafkaDto> blockEventListenerContainerFactory() {
-		ConcurrentKafkaListenerContainerFactory<String, BlockKafkaDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		factory.setConsumerFactory(BlockConsumerFactory());
-		return factory;
+		return createListenerContainerFactory(BlockConsumerFactory());
 	}
 
 	@Bean
 	public ConsumerFactory<String, PetImageKafkaDto> petConsumerFactory() {
-		Map<String, Object> props = new HashMap<>();
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(PetImageKafkaDto.class, false)));
+		return createConsumerFactory(PetImageKafkaDto.class, "feed-read-group");
 	}
 
 	@Bean
 	public ConcurrentKafkaListenerContainerFactory<String, PetImageKafkaDto> petEventListenerContainerFactory() {
-		ConcurrentKafkaListenerContainerFactory<String, PetImageKafkaDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		factory.setConsumerFactory(petConsumerFactory());
-		return factory;
+		return createListenerContainerFactory(petConsumerFactory());
 	}
 
 	@Bean
 	public ConsumerFactory<String, PetImageKafkaDto> petImageConsumerFactory() {
-		Map<String, Object> props = new HashMap<>();
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(PetImageKafkaDto.class, false)));
+		return createConsumerFactory(PetImageKafkaDto.class, "feed-read-group");
 	}
 
 	@Bean
 	public ConcurrentKafkaListenerContainerFactory<String, PetImageKafkaDto> petProfileEventListenerContainerFactory() {
-		ConcurrentKafkaListenerContainerFactory<String, PetImageKafkaDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		factory.setConsumerFactory(petImageConsumerFactory());
-		return factory;
+		return createListenerContainerFactory(petImageConsumerFactory());
 	}
 
 	@Bean
 	public ConsumerFactory<String, UuidRequestKafkaDto> accounedeleteConsumerFactory() {
-		Map<String, Object> props = new HashMap<>();
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(UuidRequestKafkaDto.class, false)));
+		return createConsumerFactory(UuidRequestKafkaDto.class, "feed-read-group");
 	}
 
 	@Bean
 	public ConcurrentKafkaListenerContainerFactory<String, UuidRequestKafkaDto> accountDeleteEventListenerContainerFactory() {
-		ConcurrentKafkaListenerContainerFactory<String, UuidRequestKafkaDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		factory.setConsumerFactory(accounedeleteConsumerFactory());
-		return factory;
+		return createListenerContainerFactory(accounedeleteConsumerFactory());
 	}
 
 	@Bean
 	public ConsumerFactory<String, TargetKafkaDto> recommendteConsumerFactory() {
-		Map<String, Object> props = new HashMap<>();
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-		props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-			new ErrorHandlingDeserializer<>(new JsonDeserializer<>(TargetKafkaDto.class, false)));
+		return createConsumerFactory(TargetKafkaDto.class, "feed-read-group");
 	}
 
 	@Bean
 	public ConcurrentKafkaListenerContainerFactory<String, TargetKafkaDto> recommendEventListenerContainerFactory() {
-		ConcurrentKafkaListenerContainerFactory<String, TargetKafkaDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		factory.setConsumerFactory(recommendteConsumerFactory());
-		return factory;
+		return createListenerContainerFactory(recommendteConsumerFactory());
 	}
 }
