@@ -152,7 +152,7 @@ public class FeedKafkaListener {
 	}
 
 	@Transactional
-	@KafkaListener(topics = "petprofile-image-update", groupId = "feed-read-group", containerFactory = "petProfileEventListenerContainerFactory")
+	@KafkaListener(topics = "petprofile-update", groupId = "feed-read-group", containerFactory = "petProfileEventListenerContainerFactory")
 	public void ImageUpdateConsume(PetImageKafkaDto petImageKafkaDto) {
 		List<FeedRead> findPetCode = feedReadRepository.findAllBypetCode(petImageKafkaDto.getPetCode());
 		if (findPetCode.isEmpty()) {
