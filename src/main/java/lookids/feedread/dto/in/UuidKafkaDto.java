@@ -9,17 +9,17 @@ import lookids.feedread.domain.FeedRead;
 @Getter
 @NoArgsConstructor
 @ToString
-public class UuidRequestKafkaDto {
+public class UuidKafkaDto {
 
 	private String uuid;
 
 	@Builder
-	public UuidRequestKafkaDto(String uuid) {
+	public UuidKafkaDto(String uuid) {
 		this.uuid = uuid;
 	}
 
-	public static UuidRequestKafkaDto toDto(String uuid) {
-		return UuidRequestKafkaDto.builder()
+	public static UuidKafkaDto toDto(String uuid) {
+		return UuidKafkaDto.builder()
 			.uuid(uuid)
 			.build();
 	}

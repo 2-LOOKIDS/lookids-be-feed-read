@@ -26,8 +26,8 @@ import lookids.feedread.dto.in.FeedDeleteKafkaDto;
 import lookids.feedread.dto.in.PetImageKafkaDto;
 import lookids.feedread.dto.in.PetKafkaDto;
 import lookids.feedread.dto.in.TargetKafkaDto;
-import lookids.feedread.dto.in.TargetRequestDto;
-import lookids.feedread.dto.in.UuidRequestKafkaDto;
+import lookids.feedread.dto.in.TargetRequestKafkaDto;
+import lookids.feedread.dto.in.UuidKafkaDto;
 import lookids.feedread.dto.out.FavoriteResponseDto;
 import lookids.feedread.dto.in.FeedKafkaDto;
 import lookids.feedread.dto.in.UserImageKafkaDto;
@@ -53,32 +53,32 @@ public class KafkaConfig {
 	}
 
 	@Bean
-	public ProducerFactory<String, UuidRequestKafkaDto> FavoriteUuidNotification() {
+	public ProducerFactory<String, UuidKafkaDto> FavoriteUuidNotification() {
 		return new DefaultKafkaProducerFactory<>(ProducerConfigs());
 	}
 
 	@Bean
-	public KafkaTemplate<String, UuidRequestKafkaDto> favoriteKafkaTemplate() {
+	public KafkaTemplate<String, UuidKafkaDto> favoriteKafkaTemplate() {
 		return new KafkaTemplate<>(FavoriteUuidNotification());
 	}
 
 	@Bean
-	public ProducerFactory<String, UuidRequestKafkaDto> FollowUuidNotification() {
+	public ProducerFactory<String, UuidKafkaDto> FollowUuidNotification() {
 		return new DefaultKafkaProducerFactory<>(ProducerConfigs());
 	}
 
 	@Bean
-	public KafkaTemplate<String, UuidRequestKafkaDto> followKafkaTemplate() {
+	public KafkaTemplate<String, UuidKafkaDto> followKafkaTemplate() {
 		return new KafkaTemplate<>(FollowUuidNotification());
 	}
 
 	@Bean
-	public ProducerFactory<String, UuidRequestKafkaDto> BlockUuidNotification() {
+	public ProducerFactory<String, UuidKafkaDto> BlockUuidNotification() {
 		return new DefaultKafkaProducerFactory<>(ProducerConfigs());
 	}
 
 	@Bean
-	public KafkaTemplate<String, UuidRequestKafkaDto> blockKafkaTemplate() {
+	public KafkaTemplate<String, UuidKafkaDto> blockKafkaTemplate() {
 		return new KafkaTemplate<>(BlockUuidNotification());
 	}
 
@@ -93,12 +93,12 @@ public class KafkaConfig {
 	}
 
 	@Bean
-	public ProducerFactory<String, TargetRequestDto> recommendNotification() {
+	public ProducerFactory<String, TargetRequestKafkaDto> recommendNotification() {
 		return new DefaultKafkaProducerFactory<>(ProducerConfigs());
 	}
 
 	@Bean
-	public KafkaTemplate<String, TargetRequestDto> recommendKafkaTemplate() {
+	public KafkaTemplate<String, TargetRequestKafkaDto> recommendKafkaTemplate() {
 		return new KafkaTemplate<>(recommendNotification());
 	}
 
@@ -231,12 +231,12 @@ public class KafkaConfig {
 	}
 
 	@Bean
-	public ConsumerFactory<String, UuidRequestKafkaDto> accounedeleteConsumerFactory() {
-		return createConsumerFactory(UuidRequestKafkaDto.class, "feed-read-group");
+	public ConsumerFactory<String, UuidKafkaDto> accounedeleteConsumerFactory() {
+		return createConsumerFactory(UuidKafkaDto.class, "feed-read-group");
 	}
 
 	@Bean
-	public ConcurrentKafkaListenerContainerFactory<String, UuidRequestKafkaDto> accountDeleteEventListenerContainerFactory() {
+	public ConcurrentKafkaListenerContainerFactory<String, UuidKafkaDto> accountDeleteEventListenerContainerFactory() {
 		return createListenerContainerFactory(accounedeleteConsumerFactory());
 	}
 

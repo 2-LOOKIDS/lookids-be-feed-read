@@ -22,11 +22,11 @@ import lookids.feedread.dto.in.FeedDeleteKafkaDto;
 import lookids.feedread.dto.in.FeedKafkaDto;
 import lookids.feedread.dto.in.PetImageKafkaDto;
 import lookids.feedread.dto.in.TargetKafkaDto;
-import lookids.feedread.dto.in.TargetRequestDto;
+import lookids.feedread.dto.in.TargetRequestKafkaDto;
 import lookids.feedread.dto.in.UserImageKafkaDto;
 import lookids.feedread.dto.in.UserKafkaDto;
 import lookids.feedread.dto.in.UserNickNameKafkaDto;
-import lookids.feedread.dto.in.UuidRequestKafkaDto;
+import lookids.feedread.dto.in.UuidKafkaDto;
 import lookids.feedread.dto.out.FavoriteResponseDto;
 import lookids.feedread.dto.out.FollowResponseDto;
 import lookids.feedread.infrastructure.FeedReadRepository;
@@ -42,7 +42,7 @@ public class FeedKafkaListener {
 	private final ConcurrentHashMap<String, CompletableFuture<FollowResponseDto>> followEventFutureMap = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, CompletableFuture<BlockKafkaDto>> blockEventFutureMap = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, CompletableFuture<PetImageKafkaDto>> petEventFutureMap = new ConcurrentHashMap<>();
-	private final KafkaTemplate<String, TargetRequestDto> recommendKafkaTemplate;
+	private final KafkaTemplate<String, TargetRequestKafkaDto> recommendKafkaTemplate;
 
 	private final FeedReadRepository feedReadRepository;
 	private final MongoTemplate mongoTemplate;
@@ -147,8 +147,8 @@ public class FeedKafkaListener {
 		List<String> uuidList = findUuidList.stream()
 			.map(FeedRead::getUuid)
 			.collect(Collectors.toList());
-		TargetRequestDto targetRequestDto = TargetRequestDto.toDto(targetKafkaDto.getAuthorUuid(), uuidList);
-		recommendKafkaTemplate.send("recommend-user-response", targetRequestDto);
+		TargetRequestKafkaDto targetRequestKafkaDto = TargetRequestKafkaDto.toDto(targetKafkaDto.getAuthorUuid(), uuidList);
+		recommendKafkaTemplate.send("recommend-user-response", targetRequestKafkaDto);
 	}
 
 	@Transactional
@@ -164,12 +164,12 @@ public class FeedKafkaListener {
 	}
 
 	@KafkaListener(topics = "account-delete", groupId = "feed-read-group", containerFactory = "accountDeleteEventListenerContainerFactory")
-	public void ImageUpdateConsume(UuidRequestKafkaDto uuidRequestKafkaDto) {
-		List<FeedRead> findUuid = feedReadRepository.findAllByUuid(uuidRequestKafkaDto.getUuid());
+	public void ImageUpdateConsume(UuidKafkaDto uuidKafkaDto) {
+		List<FeedRead> findUuid = feedReadRepository.findAllByUuid(uuidKafkaDto.getUuid());
 		if (findUuid.isEmpty()) {
 			throw new BaseException(BaseResponseStatus.NO_EXIST_FEED);
 		}
-		List<FeedRead> feedDelete = findUuid.stream().map(uuidRequestKafkaDto::toDelete)
+		List<FeedRead> feedDelete = findUuid.stream().map(uuidKafkaDto::toDelete)
 			.collect(Collectors.toList());
 		feedReadRepository.saveAll(feedDelete);
 	}
