@@ -28,9 +28,9 @@ import lookids.feedread.domain.FeedRead;
 import lookids.feedread.dto.in.BlockKafkaDto;
 import lookids.feedread.dto.in.PetImageKafkaDto;
 import lookids.feedread.dto.in.PetKafkaDto;
-import lookids.feedread.dto.in.TargetRequestDto;
+import lookids.feedread.dto.in.TargetRequestKafkaDto;
 import lookids.feedread.dto.in.UserKafkaDto;
-import lookids.feedread.dto.in.UuidRequestKafkaDto;
+import lookids.feedread.dto.in.UuidKafkaDto;
 import lookids.feedread.dto.out.FavoriteResponseDto;
 import lookids.feedread.dto.out.FeedListResponseDto;
 import lookids.feedread.dto.out.FeedReadDetailResponseDto;
@@ -49,17 +49,17 @@ public class FeedReadServiceImpl implements FeedReadService {
 	private final ConcurrentHashMap<String, CompletableFuture<FollowResponseDto>> followEventFutureMap = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, CompletableFuture<BlockKafkaDto>> blockEventFutureMap = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, CompletableFuture<PetImageKafkaDto>> petEventFutureMap = new ConcurrentHashMap<>();
-	private final KafkaTemplate<String, UuidRequestKafkaDto> favoriteKafkaTemplate;
-	private final KafkaTemplate<String, UuidRequestKafkaDto> followKafkaTemplate;
-	private final KafkaTemplate<String, UuidRequestKafkaDto> blockKafkaTemplate;
+	private final KafkaTemplate<String, UuidKafkaDto> favoriteKafkaTemplate;
+	private final KafkaTemplate<String, UuidKafkaDto> followKafkaTemplate;
+	private final KafkaTemplate<String, UuidKafkaDto> blockKafkaTemplate;
 	private final KafkaTemplate<String, PetKafkaDto> petKafkaTemplate;
-	private final KafkaTemplate<String, TargetRequestDto> recommendKafkaTemplate;
+	private final KafkaTemplate<String, TargetRequestKafkaDto> recommendKafkaTemplate;
 	private final FeedReadRepository feedReadRepository;
 	private final MongoTemplate mongoTemplate;
 
 	@Override
 	public Page<FeedReadResponseDto> readFeedFavoriteList(String uuid, int page, int size) {
-		favoriteKafkaTemplate.send("favorite-request", UuidRequestKafkaDto.toDto(uuid));
+		favoriteKafkaTemplate.send("favorite-request", UuidKafkaDto.toDto(uuid));
 		CompletableFuture<FavoriteResponseDto> futureFeedCodeList = new CompletableFuture<>();
 		favoriteEventFutureMap.put(uuid, futureFeedCodeList);
 		List<String> targetCodeList;
@@ -85,10 +85,10 @@ public class FeedReadServiceImpl implements FeedReadService {
 
 	@Override
 	public Page<FeedListResponseDto> readFeedAndTagList(String uuid, String tag, int page, int size) {
-		followKafkaTemplate.send("follow-request", UuidRequestKafkaDto.toDto(uuid));
+		followKafkaTemplate.send("follow-request", UuidKafkaDto.toDto(uuid));
 		CompletableFuture<FollowResponseDto> futureUuidList = new CompletableFuture<>();
 		followEventFutureMap.put(uuid, futureUuidList);
-		blockKafkaTemplate.send("block-request", UuidRequestKafkaDto.toDto(uuid));
+		blockKafkaTemplate.send("block-request", UuidKafkaDto.toDto(uuid));
 		CompletableFuture<BlockKafkaDto> futureBlockList = new CompletableFuture<>();
 		blockEventFutureMap.put(uuid, futureBlockList);
 		List<String> followUuid;
@@ -135,7 +135,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 
 	@Override
 	public Page<FeedReadResponseDto> readFeedMemberRandomList(String uuid, int page, int size) {
-		blockKafkaTemplate.send("block-request", UuidRequestKafkaDto.toDto(uuid));
+		blockKafkaTemplate.send("block-request", UuidKafkaDto.toDto(uuid));
 		CompletableFuture<BlockKafkaDto> futureBlockList = new CompletableFuture<>();
 		blockEventFutureMap.put(uuid, futureBlockList);
 		List<String> BlockUuidList;
