@@ -18,6 +18,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.scheduling.support.SimpleTriggerContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +34,7 @@ import lookids.feedread.dto.in.FeedKafkaDto;
 import lookids.feedread.dto.in.PetImageKafkaDto;
 import lookids.feedread.dto.in.PetKafkaDto;
 import lookids.feedread.dto.in.TargetKafkaDto;
+import lookids.feedread.dto.in.TargetRequestDto;
 import lookids.feedread.dto.in.UserImageKafkaDto;
 import lookids.feedread.dto.in.UserKafkaDto;
 import lookids.feedread.dto.in.UserNickNameKafkaDto;
@@ -61,7 +63,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 	private final KafkaTemplate<String, UuidRequestKafkaDto> followKafkaTemplate;
 	private final KafkaTemplate<String, UuidRequestKafkaDto> blockKafkaTemplate;
 	private final KafkaTemplate<String, PetKafkaDto> petKafkaTemplate;
-	private final KafkaTemplate<String, UuidListKafkaDto> uuidKafkaTemplate;
+	private final KafkaTemplate<String, TargetRequestDto> recommendKafkaTemplate;
 
 	private final FeedReadRepository feedReadRepository;
 	private final MongoTemplate mongoTemplate;
@@ -162,7 +164,12 @@ public class FeedReadServiceImpl implements FeedReadService {
 
 	@KafkaListener(topics = "recommend-user", groupId = "feed-read-group", containerFactory = "recommendEventListenerContainerFactory")
 	public void recommendTarget(TargetKafkaDto targetKafkaDto) {
-		log.info("recommend: {}", targetKafkaDto);
+		List<FeedRead> findUuidList = feedReadRepository.findByFeedCodeIn(targetKafkaDto.getTargetCode());
+		List<String> uuidList = findUuidList.stream()
+			.map(FeedRead::getUuid)
+			.collect(Collectors.toList());
+		TargetRequestDto targetRequestDto = TargetRequestDto.toDto(uuidList);
+		recommendKafkaTemplate.send("recommend-user-response", targetRequestDto);
 	}
 
 	@Override

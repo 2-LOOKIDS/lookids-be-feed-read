@@ -26,6 +26,7 @@ import lookids.feedread.dto.in.FeedDeleteKafkaDto;
 import lookids.feedread.dto.in.PetImageKafkaDto;
 import lookids.feedread.dto.in.PetKafkaDto;
 import lookids.feedread.dto.in.TargetKafkaDto;
+import lookids.feedread.dto.in.TargetRequestDto;
 import lookids.feedread.dto.in.UuidRequestKafkaDto;
 import lookids.feedread.dto.out.FavoriteResponseDto;
 import lookids.feedread.dto.in.FeedKafkaDto;
@@ -117,6 +118,24 @@ public class KafkaConfig {
 		return new KafkaTemplate<>(petProfileNotification());
 	}
 
+	@Bean
+	public Map<String, Object> recommendProducerConfigs() {
+		Map<String, Object> producerProps = new HashMap<>();
+		producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
+		producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+		producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+		return producerProps;
+	}
+
+	@Bean
+	public ProducerFactory<String, TargetRequestDto> recommendNotification() {
+		return new DefaultKafkaProducerFactory<>(recommendProducerConfigs());
+	}
+
+	@Bean
+	public KafkaTemplate<String, TargetRequestDto> recommendKafkaTemplate() {
+		return new KafkaTemplate<>(recommendNotification());
+	}
 
 	@Bean
 	public ConsumerFactory<String, FeedKafkaDto> feedConsumerFactory() {
@@ -336,7 +355,7 @@ public class KafkaConfig {
 	}
 
 	@Bean
-	public ConsumerFactory<String, TargetKafkaDto> recommendConsumerFactory() {
+	public ConsumerFactory<String, TargetKafkaDto> recommendteConsumerFactory() {
 		Map<String, Object> props = new HashMap<>();
 		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
 		props.put(ConsumerConfig.GROUP_ID_CONFIG, "feed-read-group");
@@ -350,7 +369,7 @@ public class KafkaConfig {
 	@Bean
 	public ConcurrentKafkaListenerContainerFactory<String, TargetKafkaDto> recommendEventListenerContainerFactory() {
 		ConcurrentKafkaListenerContainerFactory<String, TargetKafkaDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		factory.setConsumerFactory(recommendConsumerFactory());
+		factory.setConsumerFactory(recommendteConsumerFactory());
 		return factory;
 	}
 }
