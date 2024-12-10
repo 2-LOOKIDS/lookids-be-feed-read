@@ -75,6 +75,9 @@ jobs:
           --parameters 'commands=["sudo docker stop feed-read || true", "sudo docker rm feed-read || true"]' \
           --comment "Stopping and removing old container" \
           --region ap-northeast-2
+          
+        # Wait for a few seconds to ensure the old container is fully removed
+        sleep 10  # 10 seconds delay
 
         # Pull new image and start container
         aws ssm send-command \
