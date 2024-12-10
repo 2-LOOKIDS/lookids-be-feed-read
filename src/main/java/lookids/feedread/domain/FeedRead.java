@@ -51,7 +51,7 @@ public class FeedRead {
 		this.tag = tag;
 	}
 
-	public static FeedRead toDto(FeedKafkaDto feedKafkaDto, UserKafkaDto userKafkaDto) {
+	public static FeedRead toEntity(FeedKafkaDto feedKafkaDto, UserKafkaDto userKafkaDto) {
 		return FeedRead.builder()
 			.feedCode(feedKafkaDto.getFeedCode())
 			.uuid(feedKafkaDto.getUuid())
@@ -62,9 +62,9 @@ public class FeedRead {
 			.mediaUrlList(feedKafkaDto.getMediaUrlList())
 			.createdAt(feedKafkaDto.getCreatedAt())
 			.uuid(userKafkaDto.getUuid())
-			.nickname(userKafkaDto.getNickname())
-			.image(userKafkaDto.getImage())
-			.tag(userKafkaDto.getTag())
+			// .nickname(userKafkaDto.getNickname())
+			// .image(userKafkaDto.getImage())
+			// .tag(userKafkaDto.getTag())
 			.build();
 	}
 }
