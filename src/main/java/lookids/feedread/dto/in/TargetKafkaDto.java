@@ -12,10 +12,12 @@ import lombok.ToString;
 @ToString
 public class TargetKafkaDto {
 
+	private String authorUuid;
 	private List<String> targetCode;
 
 	@Builder
-	public TargetKafkaDto(List<String> targetCode) {
+	public TargetKafkaDto(String authorUuid, List<String> targetCode) {
+		this.authorUuid = authorUuid;
 		this.targetCode = targetCode;
 	}
 }

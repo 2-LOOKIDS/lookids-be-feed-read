@@ -168,7 +168,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 		List<String> uuidList = findUuidList.stream()
 			.map(FeedRead::getUuid)
 			.collect(Collectors.toList());
-		TargetRequestDto targetRequestDto = TargetRequestDto.toDto(uuidList);
+		TargetRequestDto targetRequestDto = TargetRequestDto.toDto(targetKafkaDto.getAuthorUuid(), uuidList);
 		recommendKafkaTemplate.send("recommend-user-response", targetRequestDto);
 	}
 
