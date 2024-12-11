@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
@@ -96,9 +98,13 @@ public class FeedReadServiceImpl implements FeedReadService {
 		favoriteEventFutureMap.put(uuid, futureFeedCodeList);
 		List<String> targetCodeList;
 		try {
-			targetCodeList = futureFeedCodeList.get().getTargetCodeList();
+			targetCodeList = futureFeedCodeList.get(5, TimeUnit.SECONDS).getTargetCodeList();
 		} catch (InterruptedException | ExecutionException e) {
 			log.error("Error while fetching favorite feed codes", e);
+			targetCodeList = Collections.emptyList();
+		}
+		catch (TimeoutException e) {
+			log.warn("Timeout while waiting for favorite feed codes", e);
 			targetCodeList = Collections.emptyList();
 		}
 		Criteria criteria = Criteria.where("feedCode").in(targetCodeList).and("state").is(true);
@@ -125,16 +131,24 @@ public class FeedReadServiceImpl implements FeedReadService {
 		blockEventFutureMap.put(uuid, futureBlockList);
 		List<String> followUuid;
 		try {
-			followUuid = futureUuidList.get().getFollowUuid();
+			followUuid = futureUuidList.get(5, TimeUnit.SECONDS).getFollowUuid();
 		} catch (InterruptedException | ExecutionException e) {
 			log.error("Error while fetching follow list", e);
 			followUuid = Collections.emptyList();
 		}
+		catch (TimeoutException e) {
+			log.warn("Timeout", e);
+			followUuid = Collections.emptyList();
+		}
 		List<String> BlockUuidList;
 		try {
-			BlockUuidList = futureBlockList.get().getBlockUuid();
+			BlockUuidList = futureBlockList.get(5, TimeUnit.SECONDS).getBlockUuid();
 		} catch (InterruptedException | ExecutionException e) {
 			log.error("Error while fetching block list", e);
+			BlockUuidList = Collections.emptyList();
+		}
+		catch (TimeoutException e) {
+			log.warn("Timeout while waiting for favorite feed codes", e);
 			BlockUuidList = Collections.emptyList();
 		}
 		Criteria followCriteria = Criteria.where("uuid").in(followUuid).and("state").is(true);
@@ -144,8 +158,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 		Criteria blockCriteria = new Criteria();
 		if (!BlockUuidList.isEmpty()) {
 			blockCriteria = Criteria.where("uuid").nin(BlockUuidList);
-			log.info("consume: {}", BlockUuidList);
-		}
+ 		}
 		Criteria combinedCriteria = new Criteria().andOperator(followCriteria, blockCriteria);
 		Aggregation aggregation = Aggregation.newAggregation(
 			Aggregation.match(combinedCriteria),
@@ -172,9 +185,13 @@ public class FeedReadServiceImpl implements FeedReadService {
 		blockEventFutureMap.put(uuid, futureBlockList);
 		List<String> BlockUuidList;
 		try {
-			BlockUuidList = futureBlockList.get().getBlockUuid();
+			BlockUuidList = futureBlockList.get(5, TimeUnit.SECONDS).getBlockUuid();
 		} catch (InterruptedException | ExecutionException e) {
 			log.error("Error while fetching favorite feed codes", e);
+			BlockUuidList = Collections.emptyList();
+		}
+		catch (TimeoutException e) {
+			log.warn("Timeout while waiting for favorite feed codes", e);
 			BlockUuidList = Collections.emptyList();
 		}
 		Criteria criteria = Criteria.where("state").is(true);
@@ -202,9 +219,9 @@ public class FeedReadServiceImpl implements FeedReadService {
 	public Page<FeedListResponseDto> readFeedRandomList(int page, int size) {
 		Aggregation aggregation = Aggregation.newAggregation(
 			Aggregation.match(Criteria.where("state").is(true)),
-		Aggregation.sample(size),
 			Aggregation.skip((long) page * size),
-			Aggregation.limit(size));
+			Aggregation.limit(size),
+			Aggregation.sample(size));
 		List<FeedRead> feedReadList = mongoTemplate.aggregate(aggregation, "feedRead", FeedRead.class).getMappedResults();
 		List<FeedListResponseDto> feedRandomList = feedReadList
 			.stream().map(feedRead -> {
@@ -231,6 +248,7 @@ public class FeedReadServiceImpl implements FeedReadService {
 		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
 		return new PageImpl<>(feedDtoList, pageable, total);
 	}
+
 
 	@Override
 	public FeedReadDetailResponseDto readFeedDetail(String feedCode) {
@@ -267,7 +285,6 @@ public class FeedReadServiceImpl implements FeedReadService {
 	}
 	@KafkaListener(topics = "feed-create", groupId = "feed-read-group", containerFactory = "feedEventListenerContainerFactory")
 	public void FeedConsume(FeedKafkaDto feedKafkaDto) {
-		log.info("dfjhsff:{} ",feedKafkaDto);
 		String uuid = feedKafkaDto.getUuid();
 		CompletableFuture<FeedKafkaDto> feedEventFuture = feedEventFutureMap.computeIfAbsent(uuid,
 			key -> new CompletableFuture<>());
