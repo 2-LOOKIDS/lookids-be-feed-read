@@ -217,11 +217,13 @@ public class FeedReadServiceImpl implements FeedReadService {
 
 	@Override
 	public Page<FeedListResponseDto> readFeedRandomList(int page, int size) {
+		long total = mongoTemplate.count(Query.query(Criteria.where("state").is(true)), "feedRead");
+		long randomOffset = (long) (Math.random() * total);
 		Aggregation aggregation = Aggregation.newAggregation(
 			Aggregation.match(Criteria.where("state").is(true)),
-			Aggregation.skip((long) page * size),
-			Aggregation.limit(size),
-			Aggregation.sample(size));
+			Aggregation.skip(randomOffset),
+			Aggregation.limit(size)
+		);
 		List<FeedRead> feedReadList = mongoTemplate.aggregate(aggregation, "feedRead", FeedRead.class).getMappedResults();
 		List<FeedListResponseDto> feedRandomList = feedReadList
 			.stream().map(feedRead -> {
@@ -229,7 +231,6 @@ public class FeedReadServiceImpl implements FeedReadService {
 				return FeedListResponseDto.toDto(feedRead, image);
 			})
 			.collect(Collectors.toList());
-		long total = mongoTemplate.count(Query.query(Criteria.where("state").is(true)), "feedRead");
 		Pageable pageable = PageRequest.of(page, size);
 		return new PageImpl<>(feedRandomList, pageable, total);
 	}
