@@ -217,7 +217,6 @@ public class FeedReadServiceImpl implements FeedReadService {
 
 	@Override
 	public Page<FeedListResponseDto> readFeedRandomList(int page, int size) {
-		long startTime = System.currentTimeMillis();
 		long total = mongoTemplate.count(Query.query(Criteria.where("state").is(true)), "feedRead");
 		long randomOffset = (long) (Math.random() * total);
 		Aggregation aggregation = Aggregation.newAggregation(
@@ -233,8 +232,6 @@ public class FeedReadServiceImpl implements FeedReadService {
 			})
 			.collect(Collectors.toList());
 		Pageable pageable = PageRequest.of(page, size);
-		long endTime = System.currentTimeMillis();
-		System.out.println("Query executed in: " + (endTime - startTime) + " ms");
 		return new PageImpl<>(feedRandomList, pageable, total);
 	}
 
