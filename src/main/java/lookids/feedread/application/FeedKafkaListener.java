@@ -53,7 +53,7 @@ public class FeedKafkaListener {
 	}
 
 	@Transactional
-	@KafkaListener(topics = "userprofile-image-update", groupId = "feed-read-group", containerFactory = "userProfileEventListenerContainerFactory")
+	@KafkaListener(topics = "userprofile-image-update", groupId = "feed-read-group", containerFactory = "userImageEventListenerContainerFactory")
 	public void ImageUpdateConsume(UserImageKafkaDto userImageKafkaDto) {
 		List<FeedRead> findUuid = feedReadRepository.findAllByUuid(userImageKafkaDto.getUuid());
 		if (findUuid.isEmpty()) {
