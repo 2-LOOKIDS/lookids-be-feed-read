@@ -28,7 +28,7 @@ public class UserNickNameKafkaDto {
 			.id(feedRead.getId())
 			.feedCode(feedRead.getFeedCode())
 			.uuid(feedRead.getUuid())
-			.tag(feedRead.getTag())
+			.tag(tag)
 			.nickname(nickname)
 			.image(feedRead.getImage())
 			.content(feedRead.getContent())
