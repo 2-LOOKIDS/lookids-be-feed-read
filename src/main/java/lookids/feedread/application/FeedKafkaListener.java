@@ -69,7 +69,6 @@ public class FeedKafkaListener {
 		FeedRead feedRead = feedReadRepository.findByFeedCodeAndStateTrue(feedDeleteKafkaDto.getFeedCode())
 			.orElseThrow(() -> new BaseException(BaseResponseStatus.NO_EXIST_FEED));
 		FeedRead updatedFeedRead = feedDeleteKafkaDto.toUpdatedEntity(feedRead);
-		log.info("adskjfhaksljdfh: {}", feedDeleteKafkaDto);
 		feedReadRepository.save(updatedFeedRead);
 	}
 
